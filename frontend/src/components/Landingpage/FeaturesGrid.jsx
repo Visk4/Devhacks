@@ -96,7 +96,7 @@ const containerVariants = {
 const FeaturesGrid = () => {
   return (
     // Reduced py-20 to py-10 or py-12 to save vertical space
-    <section className="bg-[#05070a] py-10 px-6 min-h-screen flex items-center justify-center">
+    <section id="features" className="bg-[#05070a] py-10 px-6 min-h-screen flex items-center justify-center">
       {/* Increased max-w-5xl back to max-w-7xl to widen the grid */}
       <div className="max-w-7xl mx-auto w-full">
         

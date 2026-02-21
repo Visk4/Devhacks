@@ -8,6 +8,7 @@ import {
   ArrowRight, 
   Wrench 
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const GameModes = () => {
   return (
@@ -115,10 +116,13 @@ const GameModes = () => {
 
           {/* Button */}
           {/* Also added font-display to the button */}
+          <Link to='/ctrl-fix-it'>
           <button className="relative z-10 w-full py-4 mt-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl tracking-wider uppercase transition-all duration-300 shadow-[0_0_20px_rgba(6,182,212,0.3)] group-hover:shadow-[0_0_40px_rgba(6,182,212,0.6)] flex items-center justify-center gap-2 text-white font-display text-sm">
             Start Fixing
             <Wrench className="w-5 h-5 group-hover:-rotate-45 transition-transform duration-300" />
           </button>
+          </Link>
+          
         </div>
 
       </div>

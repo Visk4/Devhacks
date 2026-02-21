@@ -2,7 +2,7 @@ import React from 'react';
 
 const CTASection = () => {
   return (
-    <section className="relative min-h-[80vh] flex flex-col items-center justify-center px-4 overflow-hidden font-sans bg-[#060812] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#121631] via-[#090b16] to-[#040509]">
+    <section id="cta" className="relative min-h-[80vh] flex flex-col items-center justify-center px-4 overflow-hidden font-sans bg-[#060812] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#121631] via-[#090b16] to-[#040509]">
       
       {/* Background Ambient Glow around the text */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent opacity-60 pointer-events-none"></div>

@@ -66,7 +66,7 @@ const App = () => {
           <Route index element={<MockInterviewPage />} />
         </Route>
 
-        <Route path="games/ctrl-fix-it" element={<CtrlFixItPage />} />
+        <Route path="/ctrl-fix-it" element={<CtrlFixItPage />} />
       </Route>
     )
   );

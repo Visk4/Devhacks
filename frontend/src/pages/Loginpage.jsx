@@ -4,6 +4,7 @@ import { User, Lock, Eye, EyeOff, Code2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Spline from "@splinetool/react-spline";
 import axios from "axios"; // Added axios import
+const baseURL = import.meta.env.VITE_BASE_URL;
 
 const Loginpage = () => {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ const Loginpage = () => {
       };
 
       // API call to the backend
-      const response = await axios.post("http://localhost:8080/api/login", payload);
+      const response = await axios.post(`${baseURL}/login`, payload);
 
       // Save the returned tokens to localStorage for future authenticated requests
       localStorage.setItem("accessToken", response.data.accessToken);
