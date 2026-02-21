@@ -3,7 +3,7 @@ import { Swords, Play, Users } from 'lucide-react';
 
 const GameHero = () => {
   return (
-    <div className="relative min-h-screen bg-[#0b0614] flex flex-col items-center justify-center overflow-hidden font-sans">
+    <div className="relative min-h-screen bg-[#0b0614] flex flex-col items-center justify-start overflow-hidden font-sans pt-12">
       
       {/* Background Grid & Stars Effect */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>

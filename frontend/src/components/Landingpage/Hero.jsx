@@ -10,16 +10,6 @@ export default function Hero() {
 
       <div className="max-w-5xl mx-auto relative z-10">
         
-        {/* Live Users Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="inline-flex items-center gap-2 px-4 py-2 mb-10 rounded-full bg-[#10172a] border border-white/10 text-sm text-green-400"
-        >
-          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-          12,408 USERS CODING NOW
-        </motion.div>
 
         {/* Main Heading */}
         <motion.h1
