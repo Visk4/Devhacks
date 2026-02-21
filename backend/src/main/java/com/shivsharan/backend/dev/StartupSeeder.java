@@ -7,10 +7,17 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 
 import com.shivsharan.backend.enums.Difficulty;
+import com.shivsharan.backend.model.Contest;
+import com.shivsharan.backend.model.ContestProblem;
 import com.shivsharan.backend.model.Problem;
 import com.shivsharan.backend.model.TestCase;
+import com.shivsharan.backend.repository.ContestProblemRepository;
+import com.shivsharan.backend.repository.ContestRepository;
 import com.shivsharan.backend.repository.ProblemRepository;
 import com.shivsharan.backend.repository.TestCaseRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
 public class StartupSeeder implements CommandLineRunner {
@@ -19,21 +26,100 @@ public class StartupSeeder implements CommandLineRunner {
 
     private final ProblemRepository problemRepository;
     private final TestCaseRepository testCaseRepository;
+    private final ContestRepository contestRepository;
+    private final ContestProblemRepository contestProblemRepository;
 
-    public StartupSeeder(ProblemRepository problemRepository, TestCaseRepository testCaseRepository) {
+    public StartupSeeder(
+            ProblemRepository problemRepository,
+            TestCaseRepository testCaseRepository,
+            ContestRepository contestRepository,
+            ContestProblemRepository contestProblemRepository
+    ) {
         this.problemRepository = problemRepository;
         this.testCaseRepository = testCaseRepository;
+        this.contestRepository = contestRepository;
+        this.contestProblemRepository = contestProblemRepository;
     }
 
     @Override
     public void run(String... args) {
         seedSampleProblems();
+        seedDummyContests();
     }
 
     private void seedSampleProblems() {
         seedSumProblem();
         seedFibonacciProblem();
         seedPalindromeProblem();
+    }
+
+    private void seedDummyContests() {
+        try {
+            seedContest(
+                    "Weekly Contest 101",
+                    "Dummy ongoing contest for testing contest APIs",
+                    LocalDateTime.now().minusHours(1),
+                    LocalDateTime.now().plusHours(2),
+                    List.of("Sum Two Numbers", "Fibonacci Number")
+            );
+
+            seedContest(
+                    "Biweekly Contest 54",
+                    "Dummy upcoming contest for testing upcoming flow",
+                    LocalDateTime.now().plusDays(1),
+                    LocalDateTime.now().plusDays(1).plusHours(2),
+                    List.of("Palindrome Check", "Sum Two Numbers")
+            );
+
+            seedContest(
+                    "Starter Contest 7",
+                    "Dummy completed contest for testing past leaderboard flow",
+                    LocalDateTime.now().minusDays(2),
+                    LocalDateTime.now().minusDays(2).plusHours(2),
+                    List.of("Sum Two Numbers", "Palindrome Check")
+            );
+        } catch (DataAccessException ex) {
+            logger.error("StartupSeeder: failed to seed dummy contests: {}", ex.getMessage());
+        }
+    }
+
+    private void seedContest(
+            String title,
+            String description,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            List<String> problemTitles
+    ) {
+        if (contestRepository.existsByTitle(title)) {
+            logger.info("Contest '{}' already exists, skipping seed", title);
+            return;
+        }
+
+        Contest contest = Contest.builder()
+                .title(title)
+                .description(description)
+                .startTime(startTime)
+                .endTime(endTime)
+                .isVirtualEnabled(false)
+                .build();
+        Contest savedContest = contestRepository.save(contest);
+
+        int order = 1;
+        for (String problemTitle : problemTitles) {
+            Problem problem = problemRepository.findByTitle(problemTitle).orElse(null);
+            if (problem == null) {
+                logger.warn("Problem '{}' not found while seeding contest '{}', skipping", problemTitle, title);
+                continue;
+            }
+            ContestProblem contestProblem = ContestProblem.builder()
+                    .contest(savedContest)
+                    .problem(problem)
+                    .displayOrder(order++)
+                    .build();
+            contestProblemRepository.save(contestProblem);
+        }
+
+        logger.info("Created dummy contest '{}'", title);
     }
 
     private void seedSumProblem() {
