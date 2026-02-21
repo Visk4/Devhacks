@@ -27,43 +27,43 @@ const App = () => {
       <Route path="/">
         <Route index element={<Landingpage />} />
 
-         <Route path="home" element={<BaseLayout />} >
+        <Route path="home" element={<BaseLayout />}>
           <Route index element={<Homepage />} />
-         </Route>
+        </Route>
 
-         <Route path="practice" element={<BaseLayout />} >
+        <Route path="practice" element={<BaseLayout />}>
           <Route index element={<Practicepage />} />
-         </Route>
+        </Route>
 
-         <Route path="problemsolving" element={<ProblemLayout />} >
-          <Route index element={<ProblemSolvingPage />} />
-         </Route>
+        {/* UPDATED: Dynamic route mapping to problem/:problemId */}
+        <Route path="problem" element={<ProblemLayout />}>
+          <Route path=":problemId" element={<ProblemSolvingPage />} />
+        </Route>
 
-         <Route path="profile" element={<BaseLayout />} >
+        <Route path="profile" element={<BaseLayout />}>
           <Route index element={<ProfilePage />} />
-         </Route>
+        </Route>
 
-         <Route path="contests" element={<BaseLayout />} >
+        <Route path="contests" element={<BaseLayout />}>
           <Route index element={<ContestsPage />} />
-         </Route>
+        </Route>
 
-          <Route path="contest-arena" element={<ProblemLayout />} >
+        <Route path="contest-arena" element={<ProblemLayout />}>
           <Route index element={<ContestArena />} />
-          </Route>
+        </Route>
 
         <Route path="login" element={<Loginpage />} />
         <Route path="register" element={<Registerpage />} />
 
-        <Route path="games" element={<BaseLayout />} >
+        <Route path="games" element={<BaseLayout />}>
           <Route index element={<GamePage />} />
-         </Route>
+        </Route>
 
-          <Route path="interview" element={<ProblemLayout />} >
+        <Route path="interview" element={<ProblemLayout />}>
           <Route index element={<MockInterviewPage />} />
-          </Route>
+        </Route>
 
         <Route path="games/ctrl-fix-it" element={<CtrlFixItPage />} />
-        
       </Route>
     )
   );
