@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,9 +30,12 @@ import com.shivsharan.backend.enums.CheckerType;
 import com.shivsharan.backend.enums.Language;
 import com.shivsharan.backend.enums.Verdict;
 import com.shivsharan.backend.judge.TestCaseResult;
+import com.shivsharan.backend.model.Contest;
+import com.shivsharan.backend.model.ContestParticipant;
 import com.shivsharan.backend.model.Problem;
 import com.shivsharan.backend.model.Submission;
 import com.shivsharan.backend.model.TestCase;
+import com.shivsharan.backend.repository.ContestParticipantRepository;
 import com.shivsharan.backend.repository.ProblemRepository;
 import com.shivsharan.backend.repository.SubmissionRepository;
 import com.shivsharan.backend.repository.TestCaseRepository;
@@ -55,6 +61,9 @@ public class JudgeService {
 
     @Autowired
     private TestCaseRepository testCaseRepository;
+
+    @Autowired
+    private ContestParticipantRepository contestParticipantRepository;
 
     @Autowired
     private NotificationService notificationService;
@@ -337,6 +346,11 @@ public class JudgeService {
             submissionRepository.save(sub);
             logger.info("Submission {} judged with verdict: {}", submissionId, finalVerdict);
 
+            // Update contest participant score if this is a contest submission with AC verdict
+            if (Verdict.AC.name().equals(finalVerdict) && sub.getContest() != null) {
+                updateContestParticipantScore(sub);
+            }
+
         } catch (Exception e) {
             logger.error("Error during judging submission {}", submissionId, e);
             sub.setStatus(Verdict.RE);
@@ -352,6 +366,68 @@ public class JudgeService {
                 } catch (IOException ignored) {
                 }
             }
+        }
+    }
+
+    /**
+     * Update contest participant score after an AC submission
+     */
+    private void updateContestParticipantScore(Submission sub) {
+        try {
+            Contest contest = sub.getContest();
+            UUID contestId = contest.getId();
+            UUID userId = sub.getUser().getId();
+            UUID problemId = sub.getProblem().getId();
+
+            // Check if this is the first AC for this problem (no other AC submissions before this one)
+            List<Submission> previousAcSubmissions = submissionRepository
+                    .findByContest_IdAndUser_IdAndProblem_Id(contestId, userId, problemId)
+                    .stream()
+                    .filter(s -> Verdict.AC.equals(s.getStatus()) && !s.getId().equals(sub.getId()))
+                    .filter(s -> s.getSubmittedAt().isBefore(sub.getSubmittedAt()))
+                    .toList();
+
+            if (!previousAcSubmissions.isEmpty()) {
+                logger.info("Not first AC for problem {} in contest {}, skipping score update", problemId, contestId);
+                return; // Not the first AC
+            }
+
+            Optional<ContestParticipant> optParticipant = contestParticipantRepository
+                    .findByContest_IdAndUser_Id(contestId, userId);
+
+            if (optParticipant.isEmpty()) {
+                logger.warn("Participant not found for contest {} and user {}", contestId, userId);
+                return;
+            }
+
+            ContestParticipant participant = optParticipant.get();
+            Problem problem = sub.getProblem();
+
+            // Calculate time from contest start to AC
+            LocalDateTime acTime = LocalDateTime.ofInstant(sub.getSubmittedAt(), ZoneId.systemDefault());
+            Duration duration = Duration.between(contest.getStartTime(), acTime);
+            int timeMinutes = (int) duration.toMinutes();
+
+            // Count wrong attempts before this AC
+            long wrongAttempts = submissionRepository
+                    .findByContest_IdAndUser_IdAndProblem_Id(contestId, userId, problemId)
+                    .stream()
+                    .filter(s -> !Verdict.AC.equals(s.getStatus()) && s.getSubmittedAt().isBefore(sub.getSubmittedAt()))
+                    .count();
+
+            // Penalty = time + 20 min per wrong submission
+            int penalty = timeMinutes + ((int) wrongAttempts * 20);
+
+            participant.setTotalPoints(participant.getTotalPoints() + problem.getPoints());
+            participant.setTotalPenalty(participant.getTotalPenalty() + penalty);
+            participant.setLastAcTime(acTime);
+
+            contestParticipantRepository.save(participant);
+            logger.info("Updated contest participant score: user={}, contest={}, +{}pts, penalty={}", 
+                    userId, contestId, problem.getPoints(), penalty);
+
+        } catch (Exception e) {
+            logger.error("Error updating contest participant score", e);
         }
     }
 
