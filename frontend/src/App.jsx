@@ -10,7 +10,10 @@ import Landingpage from "./pages/Landingpage";
 import Loginpage from "./pages/Loginpage";
 import Registerpage from "./pages/Registerpage";
 import Homepage from "./pages/Homepage";
-
+import BaseLayout from "./layouts/BaseLayout";
+import Practicepage from "./pages/Practicepage";
+import ProblemSolvingPage from "./pages/ProblemSolvingPage";
+import ProblemLayout from "./layouts/ProblemLayout";
 
 const App = () => {
   const router = createBrowserRouter(
@@ -37,6 +40,18 @@ const App = () => {
           <Route path="profile" element={<PrivateRoute><BorrowerProfilePage /></PrivateRoute>} />
         </Route> */}
 
+         <Route path="home" element={<BaseLayout />} >
+          <Route index element={<Homepage />} />
+         </Route>
+
+         <Route path="practice" element={<BaseLayout />} >
+          <Route index element={<Practicepage />} />
+         </Route>
+
+         <Route path="problemsolving" element={<ProblemLayout />} >
+          <Route index element={<ProblemSolvingPage />} />
+         </Route>
+
         {/* Lender Routes */}
         {/* <Route path="lender" element={<LenderLayout />}>
           <Route path="dashboard" element={<PrivateRoute><LenderDashboardPage /></PrivateRoute>} />
@@ -49,7 +64,7 @@ const App = () => {
 
         <Route path="login" element={<Loginpage />} />
         <Route path="register" element={<Registerpage />} />
-        <Route path="home" element={<Homepage />} />
+        
       </Route>
     )
   );

@@ -18,9 +18,6 @@ const Homepage = () => {
       <div className="absolute -bottom-[10%] -right-[10%] w-[600px] h-[600px] bg-indigo-600/30 rounded-full blur-[150px] pointer-events-none z-0"></div>
 
       {/* Navbar wrapper (Higher z-index so it sits cleanly above the background) */}
-      <div className="relative z-20">
-        <Navbar />
-      </div>
       
       {/* Main Content Container (z-10 to sit above the glow but below popups/nav) */}
       <main className="relative z-10 w-full max-w-[1500px] mx-auto px-4 lg:px-8 py-8 flex-1">
@@ -30,8 +27,6 @@ const Homepage = () => {
         <ArenaChallengeAndProgress/>
         {/* Future grid for the 4 game mode cards will go right below this */}
       </main>
-
-      <Footer/>
       
     </div>
   )
