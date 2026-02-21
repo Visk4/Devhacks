@@ -27,7 +27,6 @@ import lombok.Data;
 public class Submission {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "varchar(36)")
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)

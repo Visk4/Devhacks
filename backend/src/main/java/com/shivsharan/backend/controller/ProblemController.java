@@ -118,7 +118,7 @@ public class ProblemController {
         }
 
         // Delete associated test cases first
-        testCaseRepository.deleteByProblemId(problemId);
+        testCaseRepository.deleteByProblem_Id(problemId);
         problemRepository.deleteById(problemId);
 
         return ResponseEntity.noContent().build();
@@ -163,7 +163,7 @@ public class ProblemController {
             return ResponseEntity.notFound().build();
         }
 
-        List<TestCase> testCases = testCaseRepository.findByProblemIdOrderByOrderingAsc(problemId);
+        List<TestCase> testCases = testCaseRepository.findByProblem_IdOrderByOrderingAsc(problemId);
         return ResponseEntity.ok(testCases);
     }
 

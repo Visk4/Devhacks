@@ -11,10 +11,10 @@ import com.shivsharan.backend.model.TestCase;
 
 @Repository
 public interface TestCaseRepository extends JpaRepository<TestCase, Long> {
-    List<TestCase> findByProblemId(UUID problemId);
-    List<TestCase> findByProblemIdAndIsSampleTrue(UUID problemId);
-    List<TestCase> findByProblemIdOrderByOrderingAsc(UUID id);
+    List<TestCase> findByProblem_Id(UUID problemId);
+    List<TestCase> findByProblem_IdAndIsSampleTrue(UUID problemId);
+    List<TestCase> findByProblem_IdOrderByOrderingAsc(UUID id);
     
     @Transactional
-    void deleteByProblemId(UUID problemId);
+    void deleteByProblem_Id(UUID problemId);
 }
