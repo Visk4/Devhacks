@@ -20,7 +20,7 @@ const problemsData = [
 const PracticeHeader = () => (
   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
     <div>
-      <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">
+      <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2 font-display">
         Explore <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Problems</span>
       </h1>
       <p className="text-slate-400 text-sm">
