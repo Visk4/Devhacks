@@ -9,6 +9,7 @@ import {
 import Landingpage from "./pages/Landingpage";
 import Loginpage from "./pages/Loginpage";
 import Registerpage from "./pages/Registerpage";
+import Homepage from "./pages/Homepage";
 
 
 const App = () => {
@@ -48,6 +49,7 @@ const App = () => {
 
         <Route path="login" element={<Loginpage />} />
         <Route path="register" element={<Registerpage />} />
+        <Route path="home" element={<Homepage />} />
       </Route>
     )
   );
