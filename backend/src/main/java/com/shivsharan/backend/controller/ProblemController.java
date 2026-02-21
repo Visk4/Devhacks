@@ -2,6 +2,7 @@ package com.shivsharan.backend.controller;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -41,14 +42,11 @@ public class ProblemController {
      */
     @PostMapping
     public ResponseEntity<Problem> createProblem(@Valid @RequestBody ProblemDTO problemDTO) {
-        // Check if problem already exists
-        if (problemRepository.existsById(problemDTO.getId())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-
         Problem problem = new Problem();
-        problem.setId(problemDTO.getId());
         problem.setTitle(problemDTO.getTitle());
+        problem.setBody(problemDTO.getBody());
+        problem.setDifficulty(problemDTO.getDifficulty());
+        problem.setPoints(problemDTO.getPoints());
         problem.setTimeLimitMs(problemDTO.getTimeLimitMs());
         problem.setMemoryLimitMb(problemDTO.getMemoryLimitMb());
         problem.setCheckerType(problemDTO.getCheckerType());
@@ -69,11 +67,11 @@ public class ProblemController {
 
     /**
      * Get a problem by ID
-     * @param problemId Problem ID (slug)
+     * @param problemId Problem ID (UUID)
      * @return Problem details
      */
     @GetMapping("/{problemId}")
-    public ResponseEntity<Problem> getProblem(@PathVariable String problemId) {
+    public ResponseEntity<Problem> getProblem(@PathVariable UUID problemId) {
         Optional<Problem> problem = problemRepository.findById(problemId);
         return problem.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -87,7 +85,7 @@ public class ProblemController {
      */
     @PutMapping("/{problemId}")
     public ResponseEntity<Problem> updateProblem(
-            @PathVariable String problemId,
+            @PathVariable UUID problemId,
             @Valid @RequestBody ProblemDTO problemDTO) {
         Optional<Problem> problemOpt = problemRepository.findById(problemId);
 
@@ -97,6 +95,9 @@ public class ProblemController {
 
         Problem problem = problemOpt.get();
         problem.setTitle(problemDTO.getTitle());
+        problem.setBody(problemDTO.getBody());
+        problem.setDifficulty(problemDTO.getDifficulty());
+        problem.setPoints(problemDTO.getPoints());
         problem.setTimeLimitMs(problemDTO.getTimeLimitMs());
         problem.setMemoryLimitMb(problemDTO.getMemoryLimitMb());
         problem.setCheckerType(problemDTO.getCheckerType());
@@ -111,7 +112,7 @@ public class ProblemController {
      * @return No content response
      */
     @DeleteMapping("/{problemId}")
-    public ResponseEntity<Void> deleteProblem(@PathVariable String problemId) {
+    public ResponseEntity<Void> deleteProblem(@PathVariable UUID problemId) {
         if (!problemRepository.existsById(problemId)) {
             return ResponseEntity.notFound().build();
         }
@@ -131,15 +132,16 @@ public class ProblemController {
      */
     @PostMapping("/{problemId}/testcases")
     public ResponseEntity<TestCase> addTestCase(
-            @PathVariable String problemId,
+            @PathVariable UUID problemId,
             @Valid @RequestBody TestCaseDTO testCaseDTO) {
         // Verify problem exists
-        if (!problemRepository.existsById(problemId)) {
+        Optional<Problem> problemOpt = problemRepository.findById(problemId);
+        if (problemOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
         TestCase testCase = new TestCase();
-        testCase.setProblemId(problemId);
+        testCase.setProblem(problemOpt.get());
         testCase.setInputPath(testCaseDTO.getInputPath());
         testCase.setOutputPath(testCaseDTO.getOutputPath());
         testCase.setPoints(testCaseDTO.getPoints());
@@ -156,7 +158,7 @@ public class ProblemController {
      * @return List of test cases
      */
     @GetMapping("/{problemId}/testcases")
-    public ResponseEntity<List<TestCase>> getTestCases(@PathVariable String problemId) {
+    public ResponseEntity<List<TestCase>> getTestCases(@PathVariable UUID problemId) {
         if (!problemRepository.existsById(problemId)) {
             return ResponseEntity.notFound().build();
         }
@@ -173,11 +175,11 @@ public class ProblemController {
      */
     @DeleteMapping("/{problemId}/testcases/{testCaseId}")
     public ResponseEntity<Void> deleteTestCase(
-            @PathVariable String problemId,
+            @PathVariable UUID problemId,
             @PathVariable Long testCaseId) {
         Optional<TestCase> testCaseOpt = testCaseRepository.findById(testCaseId);
 
-        if (testCaseOpt.isEmpty() || !testCaseOpt.get().getProblemId().equals(problemId)) {
+        if (testCaseOpt.isEmpty() || !testCaseOpt.get().getProblem().getId().equals(problemId)) {
             return ResponseEntity.notFound().build();
         }
 

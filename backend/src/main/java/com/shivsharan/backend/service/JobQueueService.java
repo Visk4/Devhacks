@@ -1,5 +1,6 @@
 package com.shivsharan.backend.service;
 
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,7 +22,7 @@ public class JobQueueService {
     private static final Logger logger = LoggerFactory.getLogger(JobQueueService.class);
     private static final int QUEUE_CAPACITY = 1024;
 
-    private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
+    private final BlockingQueue<UUID> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Thread workerThread;
 
@@ -32,7 +33,7 @@ public class JobQueueService {
      * Enqueue a submission for judging
      * @param submissionId ID of the submission to judge
      */
-    public void enqueue(String submissionId) {
+    public void enqueue(UUID submissionId) {
         boolean offered = queue.offer(submissionId);
         if (!offered) {
             logger.warn("Job queue full, falling back to direct execution for submission: {}",
@@ -55,7 +56,7 @@ public class JobQueueService {
             logger.info("Job queue worker thread started");
             while (running.get()) {
                 try {
-                    String id = queue.take(); // Blocking take
+                    UUID id = queue.take(); // Blocking take
                     logger.debug("Processing submission from queue: {}", id);
                     judgeService.judge(id);
                 } catch (InterruptedException e) {
