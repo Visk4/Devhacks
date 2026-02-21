@@ -3,7 +3,7 @@ import { Users, Bug, Shield, ArrowRight } from 'lucide-react';
 
 const GameModes = () => {
   return (
-    <section className="bg-[#05070a] min-h-screen flex items-center justify-center p-6 font-sans">
+    <section id="modes" className="bg-[#05070a] min-h-screen flex items-center justify-center p-6 font-sans">
       <div className="max-w-6xl w-full">
         
         {/* Header Section */}

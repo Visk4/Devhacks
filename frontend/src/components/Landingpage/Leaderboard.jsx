@@ -112,7 +112,7 @@ const renderStatusBadge = (status) => {
 
 const Leaderboard = () => {
   return (
-    <section className="bg-[#05070a] min-h-screen flex items-center justify-center p-6 font-sans">
+    <section id="leaderboard" className="bg-[#05070a] min-h-screen flex items-center justify-center p-6 font-sans">
       <div className="max-w-5xl w-full">
         
         {/* Header Section */}

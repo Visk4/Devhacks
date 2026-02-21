@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { 
   Code2, 
@@ -12,6 +12,16 @@ import {
 } from 'lucide-react';
 
 const Navbar = () => {
+  const [username, setUsername] = useState("Gladiator");
+
+  // Fetch the username from localStorage when the Navbar mounts
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, []);
+
   // Define navigation links to easily map through them
   const navLinks = [
     { name: 'Arena', path: '/home', icon: Gamepad2 },
@@ -79,14 +89,14 @@ const Navbar = () => {
               Pro Member
             </span>
             <span className="text-sm font-bold text-white group-hover:text-slate-200 transition-colors">
-              AlexCoder
+              {username}
             </span>
           </div>
           
           {/* Avatar with Status Ring & Dot */}
           <div className="relative">
             <img 
-              src="https://i.pravatar.cc/150?u=alexcoder" 
+              src={`https://ui-avatars.com/api/?name=${username}&background=1a1f2e&color=38bdf8`} 
               alt="User Avatar" 
               className="w-10 h-10 rounded-full object-cover border-2 border-cyan-500 p-[2px] bg-[#0b0f19]"
             />

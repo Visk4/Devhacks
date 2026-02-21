@@ -3,6 +3,7 @@ import { User, Mail, Lock, Eye, EyeOff, Code2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Spline from "@splinetool/react-spline";
 import axios from "axios"; // Added axios import
+const baseURL = import.meta.env.VITE_BASE_URL;
 
 const Registerpage = () => {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ const Registerpage = () => {
       };
 
       // API call to the backend
-      const response = await axios.post("http://localhost:8080/api/signUp", payload);
+      const response = await axios.post(`${baseURL}/signUp`, payload);
 
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("refreshToken", response.data.refreshToken);
