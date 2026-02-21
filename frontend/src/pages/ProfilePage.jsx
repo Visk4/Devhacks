@@ -372,56 +372,14 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Upcoming Contests */}
-            <div className="bg-[#0b0f19] border border-[#1a1f2e] rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-white font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
-                  <Clock size={16} className="text-blue-400" /> Upcoming
-                </h3>
-                <a href="#" className="text-cyan-500 text-[10px] font-bold uppercase tracking-widest hover:underline">Calendar</a>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex flex-col items-center justify-center shrink-0">
-                    <span className="text-[9px] font-black text-purple-400 uppercase leading-none">Feb</span>
-                    <span className="text-lg font-black text-white leading-none mt-0.5">24</span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-white text-sm font-bold">Weekly Battle #84</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Starts in 4h 30m</p>
-                  </div>
-                  <button className="bg-[#1e2536] hover:bg-[#2a3143] text-slate-200 text-xs font-bold px-4 py-2 rounded-lg transition-colors">
-                    Register
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col items-center justify-center shrink-0">
-                    <span className="text-[9px] font-black text-blue-400 uppercase leading-none">Feb</span>
-                    <span className="text-lg font-black text-white leading-none mt-0.5">28</span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-white text-sm font-bold">Global Championship Qualifiers</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Starts in 4 days</p>
-                  </div>
-                  <button className="bg-[#1e2536] hover:bg-[#2a3143] text-slate-200 text-xs font-bold px-4 py-2 rounded-lg transition-colors">
-                    Register
-                  </button>
-                </div>
-              </div>
-            </div>
+            
 
           </div>
         </div>
 
       </main>
       
-      {/* Floating Help Button */}
-      <button className="fixed bottom-6 right-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20 transition-all z-30">
-        <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-black">?</div>
-        Help
-      </button>
+      
 
     </div>
   );

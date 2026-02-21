@@ -11,7 +11,7 @@ import {
 
 const GameModes = () => {
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-16 text-white font-sans">
+    <div className="w-full max-w-6xl mx-auto px-4 pb-16 text-white font-sans">
       
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">

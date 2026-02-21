@@ -19,6 +19,7 @@ import ProblemLayout from "./layouts/ProblemLayout";
 import ProfilePage from "./pages/ProfilePage";
 import ContestsPage from "./pages/ContestsPage";
 import ContestArena from "./pages/ContestArena";
+import MockInterviewPage from "./pages/MockInterviewPage";
 
 const App = () => {
   const router = createBrowserRouter(
@@ -52,9 +53,16 @@ const App = () => {
 
         <Route path="login" element={<Loginpage />} />
         <Route path="register" element={<Registerpage />} />
-        <Route path="home" element={<Homepage />} />
-        <Route path="game" element={<GamePage />} />
-        <Route path="game/ctrl-fix-it" element={<CtrlFixItPage />} />
+
+        <Route path="games" element={<BaseLayout />} >
+          <Route index element={<GamePage />} />
+         </Route>
+
+          <Route path="interview" element={<ProblemLayout />} >
+          <Route index element={<MockInterviewPage />} />
+          </Route>
+
+        <Route path="games/ctrl-fix-it" element={<CtrlFixItPage />} />
         
       </Route>
     )
