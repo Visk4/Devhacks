@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,8 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SubmissionDTO implements Serializable {
-    @NotBlank(message = "Problem ID is required")
-    @Size(min = 1, max = 100, message = "Problem ID must be between 1 and 100 characters")
+    @NotNull(message = "Problem ID is required")
     private UUID problemId;
 
     @NotBlank(message = "Language is required")

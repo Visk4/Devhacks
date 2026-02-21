@@ -59,6 +59,11 @@ public class JudgeService {
     @Autowired
     private NotificationService notificationService;
 
+    // Self-injection to allow @Transactional to work on internal calls
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private JudgeService self;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -197,9 +202,9 @@ public class JudgeService {
             return;
         }
 
-        // 2. Delegate to transactional method
+        // 2. Delegate to transactional method via proxy (self-injection)
         try {
-            performJudging(sub);
+            self.performJudging(sub);
         } catch (Exception e) {
             logger.error("Internal error during judging for {}", submissionId, e);
         }
@@ -209,7 +214,7 @@ public class JudgeService {
      * The actual judging logic, isolated in its own transaction.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    protected void performJudging(Submission sub) {
+    public void performJudging(Submission sub) {
         UUID submissionId = sub.getId();
         logger.info("Starting judging transaction for: {}", submissionId);
         
@@ -229,7 +234,7 @@ public class JudgeService {
             return;
         }
 
-        List<TestCase> testCases = testCaseRepository.findByProblemIdOrderByOrderingAsc(problem.getId());
+        List<TestCase> testCases = testCaseRepository.findByProblem_IdOrderByOrderingAsc(problem.getId());
 
         Path workDir = null;
         List<TestCaseResult> results = new ArrayList<>();
@@ -262,8 +267,8 @@ public class JudgeService {
         }
         logger.info("Sandbox is ready. Proceeding with submission: {}", submissionId);
 
-        // Unique username for this submission
-        String username = "judge" + submissionId.toString();
+        // Unique username for this submission (must be valid Linux username: no dashes, max 32 chars)
+        String username = "j" + submissionId.toString().replace("-", "").substring(0, 12);
 
         try {
             workDir = Files.createTempDirectory("judge-" + submissionId);
