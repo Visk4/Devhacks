@@ -72,6 +72,7 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/signUp", "/api/login", "/api/refresh-token", "/api/trySending","/api/problems","/test_data/*").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/problem/**").permitAll()
                 .requestMatchers("/profile-images/**").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/api/user-info", "/api/change-password").authenticated()
