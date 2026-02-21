@@ -16,6 +16,7 @@ import BaseLayout from "./layouts/BaseLayout";
 import Practicepage from "./pages/Practicepage";
 import ProblemSolvingPage from "./pages/ProblemSolvingPage";
 import ProblemLayout from "./layouts/ProblemLayout";
+import CommunityPage from "./components/Community/CommunityPage";
 
 const App = () => {
   const router = createBrowserRouter(
@@ -69,6 +70,7 @@ const App = () => {
         <Route path="home" element={<Homepage />} />
         <Route path="game" element={<GamePage />} />
         <Route path="game/ctrl-fix-it" element={<CtrlFixItPage />} />
+        <Route path="community" element={<CommunityPage />} />
         
       </Route>
     )

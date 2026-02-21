@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import Editor from "@monaco-editor/react";
+import { useNavigate } from 'react-router-dom'; // <-- Added for routing
 import { 
   Code2, Flame, Coins, Bell, Star, Clock, Database, CheckCircle2, 
   ChevronDown, RotateCcw, Settings, Maximize, Play, CloudUpload, 
   Terminal, ListTodo, HelpCircle, AlertCircle, AlertTriangle, ChevronRight 
 } from 'lucide-react';
+import SolutionModal from '../components/Practice/SolutionModal'; // <-- Added import
 
 const languageTemplates = {
   python: `class Solution:
@@ -54,9 +56,12 @@ class Solution {
 };
 
 const ProblemSolvingPage = () => {
+  const navigate = useNavigate(); // <-- Added router hook
+  
   const [activeTab, setActiveTab] = useState('description');
   const [activeTestCase, setActiveTestCase] = useState(1);
   const [consoleTab, setConsoleTab] = useState('testcases');
+  const [isSolutionOpen, setIsSolutionOpen] = useState(false); // <-- Added modal state
 
   // Monaco Editor State
   const [language, setLanguage] = useState("python");
@@ -87,8 +92,22 @@ const ProblemSolvingPage = () => {
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div> EASY
               </button>
-              <button className="hover:text-slate-200">Solutions</button>
-              <button className="hover:text-slate-200">Submissions</button>
+              
+              {/* --- UPDATED BUTTONS HERE --- */}
+              <button 
+                className="hover:text-slate-200 transition-colors"
+                onClick={() => setIsSolutionOpen(true)}
+              >
+                Solutions
+              </button>
+              <button 
+                className="hover:text-slate-200 transition-colors"
+                onClick={() => navigate('/problemsolving/submissions')}
+              >
+                Submissions
+              </button>
+              {/* ---------------------------- */}
+
             </div>
             <button className="flex items-center gap-1 text-[13px] font-semibold text-slate-400 hover:text-white transition-colors">
               <Star size={14} /> Add to List
@@ -189,9 +208,12 @@ const ProblemSolvingPage = () => {
             </div>
 
             {/* CTA Card */}
-            <div className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-purple-500/20 rounded-xl p-5 flex items-center justify-between group cursor-pointer hover:border-purple-500/40 transition-colors">
+            <div 
+              onClick={() => setIsSolutionOpen(true)}
+              className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-purple-500/20 rounded-xl p-5 flex items-center justify-between group cursor-pointer hover:border-purple-500/40 transition-colors"
+            >
               <div>
-                <h4 className="text-white font-bold text-sm mb-1">Stuck? Check Discussion</h4>
+                <h4 className="text-white font-bold text-sm mb-1">Stuck? Check Discussion & Solutions</h4>
                 <p className="text-slate-400 text-xs">See how top rankers solved this problem with O(n) complexity.</p>
               </div>
               <ChevronRight size={18} className="text-purple-400 group-hover:translate-x-1 transition-transform" />
@@ -344,6 +366,9 @@ const ProblemSolvingPage = () => {
 
         </div>
       </div>
+
+      {/* --- MODAL MOUNT POINT --- */}
+      <SolutionModal isOpen={isSolutionOpen} onClose={() => setIsSolutionOpen(false)} />
 
       {/* --- FOOTER --- */}
       <footer className="h-[30px] flex items-center justify-between px-4 border-t border-[#1a1f2e] bg-[#0b0f19] text-[11px] font-medium text-slate-400 shrink-0 select-none z-10 relative">
