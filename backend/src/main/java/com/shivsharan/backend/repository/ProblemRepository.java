@@ -1,8 +1,16 @@
 package com.shivsharan.backend.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+import java.util.UUID;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.shivsharan.backend.enums.Difficulty;
 import com.shivsharan.backend.model.Problem;
 
-public interface ProblemRepository extends JpaRepository<Problem, String> {
+@Repository
+public interface ProblemRepository extends JpaRepository<Problem, UUID> {
+    List<Problem> findByDifficulty(Difficulty difficulty);
+    boolean existsByTitle(String title);
 }

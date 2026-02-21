@@ -7,6 +7,9 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.shivsharan.backend.DTO.SubmissionDTO;
 import com.shivsharan.backend.DTO.SubmissionResponse;
+import com.shivsharan.backend.enums.Verdict;
 import com.shivsharan.backend.model.Problem;
 import com.shivsharan.backend.model.Submission;
 import com.shivsharan.backend.repository.ProblemRepository;
@@ -23,9 +27,6 @@ import com.shivsharan.backend.repository.SubmissionRepository;
 import com.shivsharan.backend.service.JobQueueService;
 
 import jakarta.validation.Valid;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @RestController
 @RequestMapping("/api")
@@ -79,19 +80,21 @@ public class ProblemSubmitController {
      * @return Submission details
      */
     @GetMapping("/submissions/{submissionId}")
-    public ResponseEntity<Submission> getSubmission(@PathVariable String submissionId) {
+    public ResponseEntity<Submission> getSubmission(@PathVariable UUID submissionId) {
         Optional<Submission> submission = submissionRepository.findById(submissionId);
         return submission.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     private Submission createSubmission(SubmissionDTO dto) {
+        Problem problem = problemRepository.findById(dto.getProblemId())
+                .orElseThrow(() -> new IllegalArgumentException("Problem not found"));
+        
         Submission submission = new Submission();
-        submission.setId(UUID.randomUUID().toString());
-        submission.setProblemId(dto.getProblemId());
+        submission.setProblem(problem);
         submission.setLanguage(dto.getLanguage().toUpperCase());
         submission.setCode(dto.getCode());
-        submission.setStatus("PENDING");
+        submission.setStatus(Verdict.PENDING);
         submission.setSubmittedAt(Instant.now());
         return submission;
     }

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.shivsharan.backend.service.JudgeService;
 
+import java.util.UUID;
+
 /**
  * Debug controller for manual submission judging and testing
  */
@@ -29,7 +31,7 @@ public class DebugController {
      * @return Response indicating judge was invoked
      */
     @PostMapping("/judge")
-    public ResponseEntity<String> judgeNow(@RequestParam String id) {
+    public ResponseEntity<String> judgeNow(@RequestParam UUID id) {
         logger.info("Debug: Triggering judge for submission {}", id);
         try {
             judgeService.judge(id);

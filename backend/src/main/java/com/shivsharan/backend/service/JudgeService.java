@@ -8,21 +8,19 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shivsharan.backend.enums.CheckerType;
@@ -35,6 +33,9 @@ import com.shivsharan.backend.model.TestCase;
 import com.shivsharan.backend.repository.ProblemRepository;
 import com.shivsharan.backend.repository.SubmissionRepository;
 import com.shivsharan.backend.repository.TestCaseRepository;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 @Service
 public class JudgeService {
@@ -171,7 +172,7 @@ public class JudgeService {
      * Entry point for judging. Handles lookup retries outside of a transaction 
      * to ensure data visibility.
      */
-    public void judge(String submissionId) {
+    public void judge(UUID submissionId) {
         logger.info("Submission judging request received: {}", submissionId);
         
         // 1. Find submission with retries OUTSIDE of a transaction
@@ -209,26 +210,25 @@ public class JudgeService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     protected void performJudging(Submission sub) {
-        String submissionId = sub.getId();
+        UUID submissionId = sub.getId();
         logger.info("Starting judging transaction for: {}", submissionId);
         
         // Refresh/Lock submission in this transaction
         sub = submissionRepository.findById(submissionId).orElseThrow();
         
-        sub.setStatus(Verdict.RUNNING.name());
+        sub.setStatus(Verdict.RUNNING);
         sub = submissionRepository.save(sub);
 
-        Optional<Problem> pOpt = problemRepository.findById(sub.getProblemId());
-        if (pOpt.isEmpty()) {
-            logger.warn("Problem not found: {}", sub.getProblemId());
-            sub.setStatus(Verdict.RE.name());
+        Problem problem = sub.getProblem();
+        if (problem == null) {
+            logger.warn("Problem not found for submission: {}", submissionId);
+            sub.setStatus(Verdict.RE);
             sub.setJudgedAt(Instant.now());
             submissionRepository.save(sub);
             notificationService.notifyUser(sub);
             return;
         }
 
-        Problem problem = pOpt.get();
         List<TestCase> testCases = testCaseRepository.findByProblemIdOrderByOrderingAsc(problem.getId());
 
         Path workDir = null;
@@ -243,7 +243,7 @@ public class JudgeService {
         // Check if sandbox startup failed critically
         if (sandboxError != null) {
             logger.error("Sandbox failed to initialize: {}", sandboxError);
-            sub.setStatus(Verdict.RE.name());
+            sub.setStatus(Verdict.RE);
             sub.setCompileError("Sandbox initialization failed: " + sandboxError);
             sub.setJudgedAt(Instant.now());
             submissionRepository.save(sub);
@@ -253,7 +253,7 @@ public class JudgeService {
         
         if (!waitForContainerReady(30)) {
             logger.error("Sandbox container is not ready after timeout. Aborting judge.");
-            sub.setStatus(Verdict.RE.name());
+            sub.setStatus(Verdict.RE);
             sub.setCompileError("Sandbox isolation environment failed to start (Timeout).");
             sub.setJudgedAt(Instant.now());
             submissionRepository.save(sub);
@@ -263,7 +263,7 @@ public class JudgeService {
         logger.info("Sandbox is ready. Proceeding with submission: {}", submissionId);
 
         // Unique username for this submission
-        String username = "judge" + submissionId.replace("-", "").substring(0, 10);
+        String username = "judge" + submissionId.toString();
 
         try {
             workDir = Files.createTempDirectory("judge-" + submissionId);
@@ -273,7 +273,7 @@ public class JudgeService {
                 lang = Language.valueOf(sub.getLanguage().toUpperCase());
             } catch (IllegalArgumentException e) {
                 logger.warn("Unsupported language: {}", sub.getLanguage());
-                sub.setStatus("PENDING_MANUAL");
+                sub.setStatus(Verdict.valueOf("PENDING_MANUAL"));
                 submissionRepository.save(sub);
                 notificationService.notifyUser(sub);
                 return;
@@ -291,7 +291,7 @@ public class JudgeService {
             CompileResult compileResult = compile(lang, workDir, sub.getCode(), username);
             if (!compileResult.isSuccess()) {
                 logger.info("Compilation failed for submission: {}", submissionId);
-                sub.setStatus(Verdict.CE.name());
+                sub.setStatus(Verdict.CE);
                 sub.setCompileError(compileResult.getError());
                 sub.setJudgedAt(Instant.now());
                 submissionRepository.save(sub);
@@ -324,7 +324,7 @@ public class JudgeService {
                 }
             }
 
-            sub.setStatus(finalVerdict);
+            sub.setStatus(Verdict.valueOf(finalVerdict));
             sub.setTimeMs(maxTime);
             sub.setMemoryKb(maxMemory);
             sub.setVerdictDetail(objectMapper.writeValueAsString(results));
@@ -334,7 +334,7 @@ public class JudgeService {
 
         } catch (Exception e) {
             logger.error("Error during judging submission {}", submissionId, e);
-            sub.setStatus(Verdict.RE.name());
+            sub.setStatus(Verdict.RE);
             sub.setCompileError(e.getMessage());
             sub.setJudgedAt(Instant.now());
             submissionRepository.save(sub);

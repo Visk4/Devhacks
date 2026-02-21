@@ -8,5 +8,6 @@ public enum Verdict {
     RE,   // Runtime Error (non-zero exit)
     CE,   // Compile Error
     PENDING,
-    RUNNING
+    RUNNING,
+    PENDING_MANUAL
 }
