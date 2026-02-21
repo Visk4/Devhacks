@@ -228,9 +228,8 @@ public class ContestService {
         Problem problem = problemRepository.findById(request.getProblemId())
                 .orElseThrow(() -> new RuntimeException("Problem not found"));
 
-        // Create submission
+        // Create submission (don't set ID manually - let JPA generate it)
         Submission submission = new Submission();
-        submission.setId(UUID.randomUUID());
         submission.setUser(user);
         submission.setProblem(problem);
         submission.setContest(contest);
@@ -240,9 +239,18 @@ public class ContestService {
         submission.setSubmittedAt(Instant.now());
 
         Submission saved = submissionRepository.save(submission);
+        submissionRepository.flush(); // Force flush to DB before enqueueing
 
-        // Queue for judging
-        jobQueueService.enqueue(saved.getId());
+        // Queue for judging after transaction commits
+        final UUID submissionId = saved.getId();
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+            new org.springframework.transaction.support.TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    jobQueueService.enqueue(submissionId);
+                }
+            }
+        );
 
         return saved;
     }

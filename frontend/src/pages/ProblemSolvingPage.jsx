@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Editor from "@monaco-editor/react";
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // <-- Added for routing
 import { 
   Code2, Flame, Coins, Bell, Star, Clock, Database, CheckCircle2, 
   ChevronDown, RotateCcw, Settings, Maximize, Play, CloudUpload, 
@@ -9,6 +10,7 @@ import {
   Loader2, XCircle
 } from 'lucide-react';
 const baseURL = import.meta.env.VITE_BASE_URL;
+import SolutionModal from '../components/Practice/SolutionModal'; // <-- Added import
 
 const languageTemplates = {
   python: `class Solution:\n    def solve(self):\n        pass`,
@@ -45,9 +47,12 @@ const ProblemSolvingPage = () => {
   const [submissionResult, setSubmissionResult] = useState(null);
 
   // UI States
+  const navigate = useNavigate(); // <-- Added router hook
+  
   const [activeTab, setActiveTab] = useState('description');
   const [activeTestCase, setActiveTestCase] = useState(0); 
   const [consoleTab, setConsoleTab] = useState('testcases');
+  const [isSolutionOpen, setIsSolutionOpen] = useState(false); // <-- Added modal state
 
   // Monaco Editor State
   const [language, setLanguage] = useState("python");
@@ -191,8 +196,22 @@ const ProblemSolvingPage = () => {
                 }`}></div> 
                 {problemData.difficulty}
               </button>
-              <button className="hover:text-slate-200">Solutions</button>
-              <button className="hover:text-slate-200">Submissions</button>
+              
+              {/* --- UPDATED BUTTONS HERE --- */}
+              <button 
+                className="hover:text-slate-200 transition-colors"
+                onClick={() => setIsSolutionOpen(true)}
+              >
+                Solutions
+              </button>
+              <button 
+                className="hover:text-slate-200 transition-colors"
+                onClick={() => navigate('/problemsolving/submissions')}
+              >
+                Submissions
+              </button>
+              {/* ---------------------------- */}
+
             </div>
             <button className="flex items-center gap-1 text-[13px] font-semibold text-slate-400 hover:text-white transition-colors">
               <Star size={14} /> Add to List
@@ -260,10 +279,14 @@ const ProblemSolvingPage = () => {
               </ul>
             </div>
 
-            <div className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-purple-500/20 rounded-xl p-5 flex items-center justify-between group cursor-pointer hover:border-purple-500/40 transition-colors">
+            {/* CTA Card */}
+            <div 
+              onClick={() => setIsSolutionOpen(true)}
+              className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-purple-500/20 rounded-xl p-5 flex items-center justify-between group cursor-pointer hover:border-purple-500/40 transition-colors"
+            >
               <div>
-                <h4 className="text-white font-bold text-sm mb-1">Stuck? Check Discussion</h4>
-                <p className="text-slate-400 text-xs">See how top rankers solved this problem efficiently.</p>
+                <h4 className="text-white font-bold text-sm mb-1">Stuck? Check Discussion & Solutions</h4>
+                <p className="text-slate-400 text-xs">See how top rankers solved this problem with O(n) complexity.</p>
               </div>
               <ChevronRight size={18} className="text-purple-400 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -447,6 +470,9 @@ const ProblemSolvingPage = () => {
 
         </div>
       </div>
+
+      {/* --- MODAL MOUNT POINT --- */}
+      <SolutionModal isOpen={isSolutionOpen} onClose={() => setIsSolutionOpen(false)} />
 
       {/* --- FOOTER --- */}
       <footer className="h-[30px] flex items-center justify-between px-4 border-t border-[#1a1f2e] bg-[#0b0f19] text-[11px] font-medium text-slate-400 shrink-0 select-none z-10 relative">

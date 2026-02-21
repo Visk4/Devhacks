@@ -16,6 +16,7 @@ import BaseLayout from "./layouts/BaseLayout";
 import Practicepage from "./pages/Practicepage";
 import ProblemSolvingPage from "./pages/ProblemSolvingPage";
 import ProblemLayout from "./layouts/ProblemLayout";
+import CommunityPage from "./components/Community/CommunityPage";
 import ProfilePage from "./pages/ProfilePage";
 import ContestsPage from "./pages/ContestsPage";
 import ContestArena from "./pages/ContestArena";
@@ -54,6 +55,8 @@ const App = () => {
 
         <Route path="login" element={<Loginpage />} />
         <Route path="register" element={<Registerpage />} />
+        <Route path="community" element={<CommunityPage />} />
+        
 
         <Route path="games" element={<BaseLayout />}>
           <Route index element={<GamePage />} />
