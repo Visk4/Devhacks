@@ -17,6 +17,10 @@ import Practicepage from "./pages/Practicepage";
 import ProblemSolvingPage from "./pages/ProblemSolvingPage";
 import ProblemLayout from "./layouts/ProblemLayout";
 import CommunityPage from "./components/Community/CommunityPage";
+import ProfilePage from "./pages/ProfilePage";
+import ContestsPage from "./pages/ContestsPage";
+import ContestArena from "./pages/ContestArena";
+import MockInterviewPage from "./pages/MockInterviewPage";
 
 const App = () => {
   const router = createBrowserRouter(
@@ -24,54 +28,45 @@ const App = () => {
       <Route path="/">
         <Route index element={<Landingpage />} />
 
-        {/* Admin Routes */}
-        {/* <Route path="admin">
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="KYCManagement" element={<KYCManagement />} />
-          <Route path="loansmanagement" element={<LoanManagement />} />
-          <Route path="user-management" element={<UserManagementPage />} />
-          <Route path="comp" element={<Comp />} />
-        </Route> */}
-
-        {/* Borrower Routes */}
-        {/* <Route path="borrower" element={<BorrowerLayout />}>
-          <Route path="dashboard" element={<PrivateRoute><Borrowerdashboardpage /></PrivateRoute>} />
-          <Route path="loan-application" element={<PrivateRoute><LoanApplicationForm /></PrivateRoute>} />
-          <Route path="loansManagement" element={<PrivateRoute><MyLoansPage/></PrivateRoute>} />
-          <Route path="repayment" element={<PrivateRoute><RepaymentPage /></PrivateRoute>} />
-          <Route path="kyc-form" element={<PrivateRoute><KYCform /></PrivateRoute>} />
-          <Route path="profile" element={<PrivateRoute><BorrowerProfilePage /></PrivateRoute>} />
-        </Route> */}
-
-         <Route path="home" element={<BaseLayout />} >
+        <Route path="home" element={<BaseLayout />}>
           <Route index element={<Homepage />} />
-         </Route>
+        </Route>
 
-         <Route path="practice" element={<BaseLayout />} >
+        <Route path="practice" element={<BaseLayout />}>
           <Route index element={<Practicepage />} />
-         </Route>
+        </Route>
 
-         <Route path="problemsolving" element={<ProblemLayout />} >
-          <Route index element={<ProblemSolvingPage />} />
-         </Route>
+        {/* UPDATED: Dynamic route mapping to problem/:problemId */}
+        <Route path="problem" element={<ProblemLayout />}>
+          <Route path=":problemId" element={<ProblemSolvingPage />} />
+        </Route>
 
-        {/* Lender Routes */}
-        {/* <Route path="lender" element={<LenderLayout />}>
-          <Route path="dashboard" element={<PrivateRoute><LenderDashboardPage /></PrivateRoute>} />
-          <Route path="invest" element={<PrivateRoute><InvestForm /></PrivateRoute>} />
-          <Route path="my-investment" element={<PrivateRoute><Investment /></PrivateRoute>} />
-          <Route path="profile" element={<PrivateRoute><LenderProfilePage /></PrivateRoute>} /> 
-          <Route path="earnings" element={<PrivateRoute><LenderEarningsPage /></PrivateRoute>} />
+        <Route path="profile" element={<BaseLayout />}>
+          <Route index element={<ProfilePage />} />
+        </Route>
 
-        </Route> */}
+        <Route path="contests" element={<BaseLayout />}>
+          <Route index element={<ContestsPage />} />
+        </Route>
+
+        <Route path="contest-arena" element={<ProblemLayout />}>
+          <Route index element={<ContestArena />} />
+        </Route>
 
         <Route path="login" element={<Loginpage />} />
         <Route path="register" element={<Registerpage />} />
-        <Route path="home" element={<Homepage />} />
-        <Route path="game" element={<GamePage />} />
-        <Route path="game/ctrl-fix-it" element={<CtrlFixItPage />} />
         <Route path="community" element={<CommunityPage />} />
         
+
+        <Route path="games" element={<BaseLayout />}>
+          <Route index element={<GamePage />} />
+        </Route>
+
+        <Route path="interview" element={<ProblemLayout />}>
+          <Route index element={<MockInterviewPage />} />
+        </Route>
+
+        <Route path="games/ctrl-fix-it" element={<CtrlFixItPage />} />
       </Route>
     )
   );

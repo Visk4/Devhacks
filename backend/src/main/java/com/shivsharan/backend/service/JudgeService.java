@@ -4,37 +4,44 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shivsharan.backend.enums.CheckerType;
 import com.shivsharan.backend.enums.Language;
 import com.shivsharan.backend.enums.Verdict;
 import com.shivsharan.backend.judge.TestCaseResult;
+import com.shivsharan.backend.model.Contest;
+import com.shivsharan.backend.model.ContestParticipant;
 import com.shivsharan.backend.model.Problem;
 import com.shivsharan.backend.model.Submission;
 import com.shivsharan.backend.model.TestCase;
+import com.shivsharan.backend.repository.ContestParticipantRepository;
 import com.shivsharan.backend.repository.ProblemRepository;
 import com.shivsharan.backend.repository.SubmissionRepository;
 import com.shivsharan.backend.repository.TestCaseRepository;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 @Service
 public class JudgeService {
@@ -56,7 +63,15 @@ public class JudgeService {
     private TestCaseRepository testCaseRepository;
 
     @Autowired
+    private ContestParticipantRepository contestParticipantRepository;
+
+    @Autowired
     private NotificationService notificationService;
+
+    // Self-injection to allow @Transactional to work on internal calls
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private JudgeService self;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -171,7 +186,7 @@ public class JudgeService {
      * Entry point for judging. Handles lookup retries outside of a transaction 
      * to ensure data visibility.
      */
-    public void judge(String submissionId) {
+    public void judge(UUID submissionId) {
         logger.info("Submission judging request received: {}", submissionId);
         
         // 1. Find submission with retries OUTSIDE of a transaction
@@ -196,9 +211,9 @@ public class JudgeService {
             return;
         }
 
-        // 2. Delegate to transactional method
+        // 2. Delegate to transactional method via proxy (self-injection)
         try {
-            performJudging(sub);
+            self.performJudging(sub);
         } catch (Exception e) {
             logger.error("Internal error during judging for {}", submissionId, e);
         }
@@ -208,28 +223,27 @@ public class JudgeService {
      * The actual judging logic, isolated in its own transaction.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    protected void performJudging(Submission sub) {
-        String submissionId = sub.getId();
+    public void performJudging(Submission sub) {
+        UUID submissionId = sub.getId();
         logger.info("Starting judging transaction for: {}", submissionId);
         
         // Refresh/Lock submission in this transaction
         sub = submissionRepository.findById(submissionId).orElseThrow();
         
-        sub.setStatus(Verdict.RUNNING.name());
+        sub.setStatus(Verdict.RUNNING);
         sub = submissionRepository.save(sub);
 
-        Optional<Problem> pOpt = problemRepository.findById(sub.getProblemId());
-        if (pOpt.isEmpty()) {
-            logger.warn("Problem not found: {}", sub.getProblemId());
-            sub.setStatus(Verdict.RE.name());
+        Problem problem = sub.getProblem();
+        if (problem == null) {
+            logger.warn("Problem not found for submission: {}", submissionId);
+            sub.setStatus(Verdict.RE);
             sub.setJudgedAt(Instant.now());
             submissionRepository.save(sub);
             notificationService.notifyUser(sub);
             return;
         }
 
-        Problem problem = pOpt.get();
-        List<TestCase> testCases = testCaseRepository.findByProblemIdOrderByOrderingAsc(problem.getId());
+        List<TestCase> testCases = testCaseRepository.findByProblem_IdOrderByOrderingAsc(problem.getId());
 
         Path workDir = null;
         List<TestCaseResult> results = new ArrayList<>();
@@ -243,7 +257,7 @@ public class JudgeService {
         // Check if sandbox startup failed critically
         if (sandboxError != null) {
             logger.error("Sandbox failed to initialize: {}", sandboxError);
-            sub.setStatus(Verdict.RE.name());
+            sub.setStatus(Verdict.RE);
             sub.setCompileError("Sandbox initialization failed: " + sandboxError);
             sub.setJudgedAt(Instant.now());
             submissionRepository.save(sub);
@@ -253,7 +267,7 @@ public class JudgeService {
         
         if (!waitForContainerReady(30)) {
             logger.error("Sandbox container is not ready after timeout. Aborting judge.");
-            sub.setStatus(Verdict.RE.name());
+            sub.setStatus(Verdict.RE);
             sub.setCompileError("Sandbox isolation environment failed to start (Timeout).");
             sub.setJudgedAt(Instant.now());
             submissionRepository.save(sub);
@@ -262,8 +276,8 @@ public class JudgeService {
         }
         logger.info("Sandbox is ready. Proceeding with submission: {}", submissionId);
 
-        // Unique username for this submission
-        String username = "judge" + submissionId.replace("-", "").substring(0, 10);
+        // Unique username for this submission (must be valid Linux username: no dashes, max 32 chars)
+        String username = "j" + submissionId.toString().replace("-", "").substring(0, 12);
 
         try {
             workDir = Files.createTempDirectory("judge-" + submissionId);
@@ -273,7 +287,7 @@ public class JudgeService {
                 lang = Language.valueOf(sub.getLanguage().toUpperCase());
             } catch (IllegalArgumentException e) {
                 logger.warn("Unsupported language: {}", sub.getLanguage());
-                sub.setStatus("PENDING_MANUAL");
+                sub.setStatus(Verdict.valueOf("PENDING_MANUAL"));
                 submissionRepository.save(sub);
                 notificationService.notifyUser(sub);
                 return;
@@ -291,7 +305,7 @@ public class JudgeService {
             CompileResult compileResult = compile(lang, workDir, sub.getCode(), username);
             if (!compileResult.isSuccess()) {
                 logger.info("Compilation failed for submission: {}", submissionId);
-                sub.setStatus(Verdict.CE.name());
+                sub.setStatus(Verdict.CE);
                 sub.setCompileError(compileResult.getError());
                 sub.setJudgedAt(Instant.now());
                 submissionRepository.save(sub);
@@ -324,7 +338,7 @@ public class JudgeService {
                 }
             }
 
-            sub.setStatus(finalVerdict);
+            sub.setStatus(Verdict.valueOf(finalVerdict));
             sub.setTimeMs(maxTime);
             sub.setMemoryKb(maxMemory);
             sub.setVerdictDetail(objectMapper.writeValueAsString(results));
@@ -332,9 +346,14 @@ public class JudgeService {
             submissionRepository.save(sub);
             logger.info("Submission {} judged with verdict: {}", submissionId, finalVerdict);
 
+            // Update contest participant score if this is a contest submission with AC verdict
+            if (Verdict.AC.name().equals(finalVerdict) && sub.getContest() != null) {
+                updateContestParticipantScore(sub);
+            }
+
         } catch (Exception e) {
             logger.error("Error during judging submission {}", submissionId, e);
-            sub.setStatus(Verdict.RE.name());
+            sub.setStatus(Verdict.RE);
             sub.setCompileError(e.getMessage());
             sub.setJudgedAt(Instant.now());
             submissionRepository.save(sub);
@@ -347,6 +366,68 @@ public class JudgeService {
                 } catch (IOException ignored) {
                 }
             }
+        }
+    }
+
+    /**
+     * Update contest participant score after an AC submission
+     */
+    private void updateContestParticipantScore(Submission sub) {
+        try {
+            Contest contest = sub.getContest();
+            UUID contestId = contest.getId();
+            UUID userId = sub.getUser().getId();
+            UUID problemId = sub.getProblem().getId();
+
+            // Check if this is the first AC for this problem (no other AC submissions before this one)
+            List<Submission> previousAcSubmissions = submissionRepository
+                    .findByContest_IdAndUser_IdAndProblem_Id(contestId, userId, problemId)
+                    .stream()
+                    .filter(s -> Verdict.AC.equals(s.getStatus()) && !s.getId().equals(sub.getId()))
+                    .filter(s -> s.getSubmittedAt().isBefore(sub.getSubmittedAt()))
+                    .toList();
+
+            if (!previousAcSubmissions.isEmpty()) {
+                logger.info("Not first AC for problem {} in contest {}, skipping score update", problemId, contestId);
+                return; // Not the first AC
+            }
+
+            Optional<ContestParticipant> optParticipant = contestParticipantRepository
+                    .findByContest_IdAndUser_Id(contestId, userId);
+
+            if (optParticipant.isEmpty()) {
+                logger.warn("Participant not found for contest {} and user {}", contestId, userId);
+                return;
+            }
+
+            ContestParticipant participant = optParticipant.get();
+            Problem problem = sub.getProblem();
+
+            // Calculate time from contest start to AC
+            LocalDateTime acTime = LocalDateTime.ofInstant(sub.getSubmittedAt(), ZoneId.systemDefault());
+            Duration duration = Duration.between(contest.getStartTime(), acTime);
+            int timeMinutes = (int) duration.toMinutes();
+
+            // Count wrong attempts before this AC
+            long wrongAttempts = submissionRepository
+                    .findByContest_IdAndUser_IdAndProblem_Id(contestId, userId, problemId)
+                    .stream()
+                    .filter(s -> !Verdict.AC.equals(s.getStatus()) && s.getSubmittedAt().isBefore(sub.getSubmittedAt()))
+                    .count();
+
+            // Penalty = time + 20 min per wrong submission
+            int penalty = timeMinutes + ((int) wrongAttempts * 20);
+
+            participant.setTotalPoints(participant.getTotalPoints() + problem.getPoints());
+            participant.setTotalPenalty(participant.getTotalPenalty() + penalty);
+            participant.setLastAcTime(acTime);
+
+            contestParticipantRepository.save(participant);
+            logger.info("Updated contest participant score: user={}, contest={}, +{}pts, penalty={}", 
+                    userId, contestId, problem.getPoints(), penalty);
+
+        } catch (Exception e) {
+            logger.error("Error updating contest participant score", e);
         }
     }
 

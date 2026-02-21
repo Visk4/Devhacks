@@ -3,9 +3,9 @@ package com.shivsharan.backend.Auth;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -71,7 +71,9 @@ public class SecurityConfiguration {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/signUp", "/api/login", "/api/refresh-token", "/api/trySending").permitAll()
+                .requestMatchers("/api/signUp", "/api/login", "/api/refresh-token", "/api/trySending","/api/problems","/test_data/*").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/problem/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/contests", "/api/contests/**").permitAll()
                 .requestMatchers("/profile-images/**").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/api/user-info", "/api/change-password").authenticated()

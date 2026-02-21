@@ -1,27 +1,43 @@
 package com.shivsharan.backend.model;
 
+import java.time.Instant;
+import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.shivsharan.backend.enums.Verdict;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-
-import java.time.Instant;
+import lombok.Data;
 
 @Entity
 @Table(name = "submissions")
+@Data
 public class Submission {
     @Id
-    @Column(columnDefinition = "varchar(36)")
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    @Column(name = "user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
 
-    @Column(name = "problem_id")
-    private String problemId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "problem_id", nullable = false)
+    @JsonIgnore
+    private Problem problem;
 
     @Column(name = "language")
     private String language;
@@ -30,15 +46,18 @@ public class Submission {
     @Column(name = "code", columnDefinition = "text")
     private String code;
 
-    @Column(name = "status")
-    private String status;
-
     @Column(name = "submitted_at")
     private Instant submittedAt;
 
-    @Lob
-    @Column(name = "verdict_detail", columnDefinition = "text")
-    private String verdictDetail;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contest_id")
+    @JsonIgnore
+    private Contest contest;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Verdict status = Verdict.PENDING;
 
     @Column(name = "time_ms")
     private Integer timeMs;
@@ -53,102 +72,21 @@ public class Submission {
     @Column(name = "judged_at")
     private Instant judgedAt;
 
-    public Submission() {
+    @PrePersist
+    public void setSubmittet(){
+        this.submittedAt = Instant.now() ;
     }
 
-    public String getId() {
-        return id;
+    public void setVerdictDetail(String s) {
+
     }
 
-    public void setId(String id) {
-        this.id = id;
+    // Expose IDs for JSON serialization
+    public UUID getProblemId() {
+        return problem != null ? problem.getId() : null;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public String getProblemId() {
-        return problemId;
-    }
-
-    public void setProblemId(String problemId) {
-        this.problemId = problemId;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Instant getSubmittedAt() {
-        return submittedAt;
-    }
-
-    public void setSubmittedAt(Instant submittedAt) {
-        this.submittedAt = submittedAt;
-    }
-
-    public String getVerdictDetail() {
-        return verdictDetail;
-    }
-
-    public void setVerdictDetail(String verdictDetail) {
-        this.verdictDetail = verdictDetail;
-    }
-
-    public Integer getTimeMs() {
-        return timeMs;
-    }
-
-    public void setTimeMs(Integer timeMs) {
-        this.timeMs = timeMs;
-    }
-
-    public Integer getMemoryKb() {
-        return memoryKb;
-    }
-
-    public void setMemoryKb(Integer memoryKb) {
-        this.memoryKb = memoryKb;
-    }
-
-    public String getCompileError() {
-        return compileError;
-    }
-
-    public void setCompileError(String compileError) {
-        this.compileError = compileError;
-    }
-
-    public Instant getJudgedAt() {
-        return judgedAt;
-    }
-
-    public void setJudgedAt(Instant judgedAt) {
-        this.judgedAt = judgedAt;
+    public UUID getUserId() {
+        return user != null ? user.getId() : null;
     }
 }

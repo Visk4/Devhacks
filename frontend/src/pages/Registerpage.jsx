@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { User, Mail, Lock, Eye, EyeOff, Code2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Spline from "@splinetool/react-spline";
+import axios from "axios"; // Added axios import
 
 const Registerpage = () => {
   const navigate = useNavigate();
@@ -10,17 +11,48 @@ const Registerpage = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  // Added state for loading and error handling
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-    // Static navigation (e.g., to dashboard or back to login after success)
-    navigate("/dashboard");
+    try {
+      // Constructing the payload with dynamic form data and requested static data
+      const payload = {
+        username: username,
+        password: password,
+        email: email,
+        description: "Ready for battle", // Static data
+        college: "SPIT",                 // Static data
+        gender: "MALE"                   // Static data
+      };
+
+      // API call to the backend
+      const response = await axios.post("http://localhost:8080/api/signUp", payload);
+
+      localStorage.setItem("accessToken", response.data.accessToken);
+      localStorage.setItem("refreshToken", response.data.refreshToken);
+
+      // Navigate to dashboard on success
+      navigate("/home");
+    } catch (err) {
+      console.error("Registration error:", err);
+      // Display backend error message if available, else generic error
+      setError(
+        err.response?.data?.message || "Failed to create account. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex bg-[#05070a] font-sans">
-
       {/* LEFT SECTION - 3D Animation */}
       <div className="hidden md:flex flex-1 relative overflow-hidden bg-[#060812] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#121631] via-[#090b16] to-[#040509]">
         {/* Ambient glow behind spline */}
@@ -38,7 +70,6 @@ const Registerpage = () => {
       {/* RIGHT SECTION - Register Form */}
       <div className="flex flex-1 justify-center items-center px-6 py-12 relative z-20">
         <div className="w-full max-w-md">
-
           {/* Mobile Logo */}
           <div className="flex md:hidden justify-center mb-8">
             <div className="bg-[#111724] border border-[#1a1f2e] p-4 rounded-xl shadow-lg shadow-purple-500/10">
@@ -47,7 +78,6 @@ const Registerpage = () => {
           </div>
 
           <div className="bg-[#0b0f19] rounded-2xl shadow-2xl p-8 md:p-10 border border-[#1a1f2e]">
-
             <h2 className="text-2xl md:text-2xl font-black text-white text-center mb-2 uppercase tracking-wide font-display">
               Join the <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600">Arena</span>
             </h2>
@@ -56,8 +86,14 @@ const Registerpage = () => {
               Create your gladiator profile to start competing
             </p>
 
-            <form className="space-y-5" onSubmit={handleSubmit}>
+            {/* Error Message Display */}
+            {error && (
+              <div className="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/50 text-red-400 text-sm text-center">
+                {error}
+              </div>
+            )}
 
+            <form className="space-y-5" onSubmit={handleSubmit}>
               {/* USERNAME */}
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">
@@ -143,11 +179,11 @@ const Registerpage = () => {
               {/* SUBMIT */}
               <button
                 type="submit"
-                className="font-display w-full mt-6 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider text-sm shadow-[0_0_20px_rgba(147,51,234,0.15)] transition-all transform hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(147,51,234,0.25)]"
+                disabled={isLoading}
+                className="font-display w-full mt-6 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider text-sm shadow-[0_0_20px_rgba(147,51,234,0.15)] transition-all transform hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(147,51,234,0.25)] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
               >
-                Create Account
+                {isLoading ? "Forging Account..." : "Create Account"}
               </button>
-
             </form>
 
             {/* FOOTER */}
@@ -162,7 +198,6 @@ const Registerpage = () => {
                 </a>
               </p>
             </div>
-
           </div>
         </div>
       </div>

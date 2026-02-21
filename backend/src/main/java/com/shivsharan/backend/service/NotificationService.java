@@ -13,8 +13,8 @@ public class NotificationService {
     private SimpMessagingTemplate messagingTemplate;
 
     public void notifyUser(Submission sub) {
-        // send to user-specific destination; userId might be null in dev mode
-        String user = sub.getUserId() == null ? "anonymous" : String.valueOf(sub.getUserId());
+        // send to user-specific destination; user might be null in dev mode
+        String user = sub.getUser() == null ? "anonymous" : String.valueOf(sub.getUser().getId());
         messagingTemplate.convertAndSendToUser(user, "/queue/submission-result", sub);
     }
 }

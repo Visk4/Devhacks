@@ -5,9 +5,14 @@ package com.shivsharan.backend.controller;
 import com.shivsharan.backend.Auth.JwtUtility;
 import com.shivsharan.backend.DTO.JwtTokenResponse;
 import com.shivsharan.backend.DTO.LoginRequest;
+import com.shivsharan.backend.DTO.ProfileDTO;
 import com.shivsharan.backend.DTO.RefreshTokenRequest;
 import com.shivsharan.backend.DTO.UserDTO;
+import com.shivsharan.backend.enums.Verdict;
+import com.shivsharan.backend.model.Submission;
 import com.shivsharan.backend.model.User;
+import com.shivsharan.backend.repository.ContestParticipantRepository;
+import com.shivsharan.backend.repository.SubmissionRepository;
 import com.shivsharan.backend.repository.UserRepository;
 import com.shivsharan.backend.service.UserService;
 import jakarta.validation.Valid;
@@ -34,6 +39,7 @@ import org.springframework.beans.factory.annotation.Value;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 
@@ -61,6 +67,12 @@ public class UserController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private SubmissionRepository submissionRepository;
+
+    @Autowired
+    private ContestParticipantRepository contestParticipantRepository;
 
     // ==================== PUBLIC ENDPOINTS ====================
 
@@ -264,6 +276,94 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new HashMap<String, String>() {{
                         put("error", "Profile update failed");
+                    }});
+        }
+    }
+
+    /**
+     * Get user profile with stats, rankings, and recent submissions
+     */
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+
+            Optional<User> userOptional = userRepository.findByUsername(username);
+            if (userOptional.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new HashMap<String, String>() {{
+                            put("error", "User not found");
+                        }});
+            }
+
+            User user = userOptional.get();
+            UUID userId = user.getId();
+
+            // Get total problems solved (distinct problems with AC verdict)
+            List<UUID> solvedProblemIds = submissionRepository.findSolvedProblemIds(userId, Verdict.AC);
+            int totalProblemsSolved = solvedProblemIds.size();
+
+            // Get total submissions
+            List<Submission> allSubmissions = submissionRepository.findByUser_IdOrderBySubmittedAtDesc(userId);
+            int totalSubmissions = allSubmissions.size();
+
+            // Get contests participated
+            int contestsParticipated = contestParticipantRepository.findByUser_Id(userId).size();
+
+            // Get rankings
+            Integer rating = user.getRating() != null ? user.getRating() : 0;
+            Integer globalRank = userRepository.findGlobalRank(rating);
+            
+            Integer collegeRank = null;
+            Integer totalUsersInCollege = null;
+            if (user.getCollege() != null) {
+                collegeRank = userRepository.findCollegeRank(user.getCollege(), rating);
+                totalUsersInCollege = userRepository.countByCollege(user.getCollege());
+            }
+
+            // Get recent submissions (last 10)
+            List<ProfileDTO.RecentSubmissionDTO> recentSubmissions = allSubmissions.stream()
+                    .limit(10)
+                    .map(sub -> ProfileDTO.RecentSubmissionDTO.builder()
+                            .submissionId(sub.getId())
+                            .problemId(sub.getProblem().getId())
+                            .problemTitle(sub.getProblem().getTitle())
+                            .language(sub.getLanguage())
+                            .status(sub.getStatus().name())
+                            .timeMs(sub.getTimeMs())
+                            .memoryKb(sub.getMemoryKb())
+                            .submittedAt(sub.getSubmittedAt())
+                            .build())
+                    .collect(Collectors.toList());
+
+            ProfileDTO profile = ProfileDTO.builder()
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .college(user.getCollege() != null ? user.getCollege().name() : null)
+                    .gender(user.getGender() != null ? user.getGender().name() : null)
+                    .description(user.getDescription())
+                    .profileImageUrl(buildProfileImageUrl(user.getProfileImagePath()))
+                    .createdAt(user.getCreatedAt())
+                    .rating(rating)
+                    .streak(user.getStreak() != null ? user.getStreak() : 0)
+                    .totalProblemsSolved(totalProblemsSolved)
+                    .totalSubmissions(totalSubmissions)
+                    .contestsParticipated(contestsParticipated)
+                    .globalRank(globalRank)
+                    .collegeRank(collegeRank)
+                    .totalUsersInCollege(totalUsersInCollege)
+                    .recentSubmissions(recentSubmissions)
+                    .build();
+
+            return ResponseEntity.ok(profile);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new HashMap<String, String>() {{
+                        put("error", "Failed to retrieve profile: " + e.getMessage());
                     }});
         }
     }
