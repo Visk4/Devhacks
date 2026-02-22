@@ -13,6 +13,7 @@ const baseURL = import.meta.env.VITE_BASE_URL || "http://localhost:8080/api";
 const Homepage = () => {
   const [profileData, setProfileData] = useState(null);
   const [contests, setContests] = useState([]);
+  const [dailyQuestion, setDailyQuestion] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -36,6 +37,22 @@ const Homepage = () => {
         } catch (contestErr) {
           console.warn("Failed to fetch contests, proceeding with profile data only:", contestErr);
           // Don't break the whole page if just contests fail
+        }
+
+        // 3. Fetch problem bank and set daily challenge
+        try {
+          const problemsRes = await axios.get(`${baseURL}/problems`, { headers });
+          const problems = Array.isArray(problemsRes.data) ? problemsRes.data : [];
+
+          const preferredDaily = problems.find((problem) => {
+            const id = String(problem?.id || '').toLowerCase();
+            const title = String(problem?.title || '').toLowerCase();
+            return id === 'sum' || title.includes('sum two numbers') || title.includes('add two numbers');
+          });
+
+          setDailyQuestion(preferredDaily || problems[0] || null);
+        } catch (problemErr) {
+          console.warn("Failed to fetch problems for daily challenge:", problemErr);
         }
 
       } catch (err) {
@@ -118,6 +135,7 @@ const Homepage = () => {
         <ArenaChallengeAndProgress 
           contests={contests} 
           profileData={profileData} 
+          dailyQuestion={dailyQuestion}
         />
         
       </main>

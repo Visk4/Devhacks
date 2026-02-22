@@ -70,7 +70,6 @@ const App = () => {
         <Route path="oauth2/callback" element={<OAuth2Callback />} />
         
         {/* Added Community Route */}
-        <Route path="community" element={<CommunityPage />} />
 
         <Route path="games" element={<BaseLayout />}>
           <Route index element={<GamePage />} />
@@ -78,6 +77,10 @@ const App = () => {
 
         <Route path="interview" element={<ProblemLayout />}>
           <Route index element={<MockInterviewPage />} />
+        </Route>
+
+        <Route path="community" element={<ProblemLayout />}>
+          <Route index element={<CommunityPage />} />
         </Route>
 
         {/* Fixed relative paths (removed leading slash) */}

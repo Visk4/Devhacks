@@ -1,7 +1,33 @@
 import React from 'react';
 import { Check, BarChart2, Target, ArrowUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const ArenaChallengeAndProgress = () => {
+const ArenaChallengeAndProgress = ({ dailyQuestion }) => {
+  const navigate = useNavigate();
+
+  const challengeTitle = dailyQuestion?.title || 'Today\'s Challenge';
+  const challengeDifficulty = String(dailyQuestion?.difficulty || 'MEDIUM').toLowerCase();
+  const challengeAcceptance = dailyQuestion?.acceptanceRate != null ? `${dailyQuestion.acceptanceRate}%` : 'N/A';
+  const challengePoints = dailyQuestion?.points != null ? `+${dailyQuestion.points}` : '+50';
+  const challengeDescription = dailyQuestion?.description
+    || dailyQuestion?.body
+    || 'Solve this featured problem to improve your consistency and strengthen fundamentals.';
+  const challengeTags = Array.isArray(dailyQuestion?.topics) && dailyQuestion.topics.length > 0
+    ? dailyQuestion.topics.slice(0, 2)
+    : ['Math', 'Basics'];
+
+  const difficultyBadgeClass =
+    challengeDifficulty === 'easy'
+      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+      : challengeDifficulty === 'hard'
+        ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+        : 'bg-orange-500/10 border-orange-500/20 text-orange-400';
+
+  const onSolveChallenge = () => {
+    if (!dailyQuestion?.id) return;
+    navigate(`/problem/${dailyQuestion.id}`);
+  };
+
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans mt-8">
       
@@ -13,34 +39,35 @@ const ArenaChallengeAndProgress = () => {
           <div>
             <div className="flex items-center gap-3 mb-3">
               <h2 className="text-white font-bold text-lg">Today's Arena Challenge</h2>
-              <span className="bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                Medium
+              <span className={`border text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${difficultyBadgeClass}`}>
+                {challengeDifficulty}
               </span>
             </div>
             
             <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight">
-              Optimize the Network Flow
+              {challengeTitle}
             </h3>
             
             <p className="text-slate-400 text-sm leading-relaxed pr-0 md:pr-4 mb-6">
-              Given a directed graph with capacities, determine the maximum flow from source S to sink T. Your solution must run within O(V²E) time complexity.
+              {challengeDescription}
             </p>
 
             {/* Stats Row */}
             <div className="flex flex-wrap items-center gap-6 mb-8">
               <div>
                 <p className="text-slate-500 text-xs font-medium mb-1">Acceptance</p>
-                <p className="text-white font-bold text-lg">42.5%</p>
+                <p className="text-white font-bold text-lg">{challengeAcceptance}</p>
               </div>
               <div>
                 <p className="text-slate-500 text-xs font-medium mb-1">Points</p>
-                <p className="text-white font-bold text-lg">+50 <span className="text-sm text-slate-400 font-medium">XP</span></p>
+                <p className="text-white font-bold text-lg">{challengePoints} <span className="text-sm text-slate-400 font-medium">XP</span></p>
               </div>
               <div>
                 <p className="text-slate-500 text-xs font-medium mb-1">Tags</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="bg-[#1e2536] text-slate-300 text-[11px] font-medium px-2 py-1 rounded">Graph</span>
-                  <span className="bg-[#1e2536] text-slate-300 text-[11px] font-medium px-2 py-1 rounded">Max Flow</span>
+                  {challengeTags.map((tag) => (
+                    <span key={tag} className="bg-[#1e2536] text-slate-300 text-[11px] font-medium px-2 py-1 rounded">{tag}</span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -48,7 +75,11 @@ const ArenaChallengeAndProgress = () => {
 
           {/* Action Row */}
           <div className="flex items-center gap-4">
-            <button className="bg-[#a855f7] hover:bg-[#9333ea] text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] active:scale-95 shrink-0">
+            <button
+              onClick={onSolveChallenge}
+              disabled={!dailyQuestion?.id}
+              className="bg-[#a855f7] hover:bg-[#9333ea] text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] active:scale-95 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
               Solve Challenge
             </button>
             <p className="text-slate-500 text-xs italic">
