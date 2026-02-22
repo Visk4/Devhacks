@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Editor from "@monaco-editor/react";
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // <-- Added for routing
 import { 
   Code2, Flame, Coins, Bell, Star, Clock, Database, CheckCircle2, 
   ChevronDown, RotateCcw, Settings, Maximize, Play, CloudUpload, 
   Terminal, ListTodo, HelpCircle, AlertCircle, AlertTriangle, ChevronRight,
   Loader2, XCircle
 } from 'lucide-react';
-const baseURL = import.meta.env.VITE_BASE_URL;
-import SolutionModal from '../components/Practice/SolutionModal'; // <-- Added import
+import SolutionModal from '../components/Practice/SolutionModal';
+
+const baseURL = import.meta.env.VITE_BASE_URL || 'http://localhost:8080/api';
 
 const languageTemplates = {
   python: `class Solution:\n    def solve(self):\n        pass`,
@@ -35,24 +35,30 @@ const getVerdictInfo = (status) => {
 };
 
 const ProblemSolvingPage = () => {
-  const { problemId } = useParams(); 
+  const { problemId } = useParams();
+  const [searchParams] = useSearchParams();
+  const contestId = searchParams.get('contestId'); // Get contestId from URL
   
   // Data States
   const [problemData, setProblemData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [leaderboardRefreshTrigger, setLeaderboardRefreshTrigger] = useState(0);
 
   // Submission States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState(null);
 
+  // Real-time leaderboard polling
+  const leaderboardPollingRef = useRef(null);
+  const pollingEnabledRef = useRef(false);
+
   // UI States
-  const navigate = useNavigate(); // <-- Added router hook
-  
+  const navigate = useNavigate(); 
   const [activeTab, setActiveTab] = useState('description');
   const [activeTestCase, setActiveTestCase] = useState(0); 
   const [consoleTab, setConsoleTab] = useState('testcases');
-  const [isSolutionOpen, setIsSolutionOpen] = useState(false); // <-- Added modal state
+  const [isSolutionOpen, setIsSolutionOpen] = useState(false); 
 
   // Monaco Editor State
   const [language, setLanguage] = useState("python");
@@ -61,26 +67,46 @@ const ProblemSolvingPage = () => {
   // Fetch problem data on mount
   useEffect(() => {
     const fetchProblemData = async () => {
+      // 1. Guard against bad URLs
+      if (!problemId || problemId === 'undefined') {
+        setError("Invalid Problem ID. Please select a valid problem from the Arena.");
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
+        setError("");
         const token = localStorage.getItem("accessToken");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
-        const response = await axios.get(`${baseURL}/problem/${problemId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // Ensure this endpoint exactly matches your Spring Boot @GetMapping path
+        const response = await axios.get(`${baseURL}/problem/${problemId}`, { headers });
         
         setProblemData(response.data);
       } catch (err) {
         console.error("Error fetching problem:", err);
-        setError("Failed to load problem details. Please try again.");
+        
+        // 2. Enhanced Error Extraction
+        let errorMessage = "Failed to load problem details. ";
+        
+        if (err.response) {
+          // Server responded with an error status (4xx, 5xx)
+          errorMessage += `\nServer Error (${err.response.status}): ${err.response.data?.message || err.response.data?.error || 'No message provided by backend.'}`;
+        } else if (err.request) {
+          // No response received (Network error, CORS, Server offline)
+          errorMessage += "\nBackend is unreachable. Check if the server is running and CORS is configured.";
+        } else {
+          errorMessage += err.message;
+        }
+
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (problemId) {
-      fetchProblemData();
-    }
+    fetchProblemData();
   }, [problemId]);
 
   const handleLanguageChange = (lang) => {
@@ -93,28 +119,31 @@ const ProblemSolvingPage = () => {
     if (!code.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
-    setConsoleTab('result'); // Switch user's view to result tab automatically
-    setSubmissionResult({ status: 'PENDING' }); // Show initial loading state
+    setConsoleTab('result'); 
+    setSubmissionResult({ status: 'PENDING' }); 
     
     const token = localStorage.getItem("accessToken");
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
-      // 1. Post the submission
-      const postResponse = await axios.post(`${baseURL}/submissions`, {
+      const submissionPayload = {
         problemId: problemId,
         language: language,
         code: code
-      }, { headers });
+      };
 
+      // Add contestId if solving in contest mode
+      if (contestId) {
+        submissionPayload.contestId = contestId;
+      }
+
+      const postResponse = await axios.post(`${baseURL}/submissions`, submissionPayload, { headers });
       const { submissionId } = postResponse.data;
 
-      // 2. Poll the GET endpoint until judged
       let isJudged = false;
       let finalResult = null;
 
       while (!isJudged) {
-        // Wait 1.5 seconds between polls
         await new Promise(resolve => setTimeout(resolve, 1500)); 
 
         const getResponse = await axios.get(`${baseURL}/submissions/${submissionId}`, { headers });
@@ -124,12 +153,25 @@ const ProblemSolvingPage = () => {
           isJudged = true;
           finalResult = getResponse.data;
         } else {
-          // Update state so UI reflects RUNNING if it changes from PENDING
           setSubmissionResult(getResponse.data);
         }
       }
 
       setSubmissionResult(finalResult);
+
+      // If AC verdict and in contest mode, trigger leaderboard refresh and polling
+      if (finalResult?.status === 'AC' && contestId) {
+        console.log("✓ AC Verdict! Triggering leaderboard refresh...");
+        setLeaderboardRefreshTrigger(prev => prev + 1);
+        
+        // Enable polling to update leaderboard for all users
+        pollingEnabledRef.current = true;
+        
+        // Show success and redirect after 3 seconds
+        setTimeout(() => {
+          navigate(`/contest-arena?contestId=${contestId}`);
+        }, 3000);
+      }
 
     } catch (err) {
       console.error("Submission failed:", err);
@@ -155,26 +197,36 @@ const ProblemSolvingPage = () => {
       .map(line => line.replace('-', '').trim());
   };
 
+  // --- LOADING RENDER ---
   if (isLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#05070a] text-cyan-400">
+      <div className="h-screen flex flex-col items-center justify-center bg-[#05070a] text-cyan-400 font-sans">
         <Loader2 className="w-10 h-10 animate-spin mb-4" />
-        <p className="text-slate-400 font-medium">Loading Arena Workspace...</p>
+        <p className="text-slate-400 font-medium tracking-wide">Loading Arena Workspace...</p>
       </div>
     );
   }
 
+  // --- ERROR RENDER ---
   if (error || !problemData) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#05070a]">
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-6 py-4 rounded-xl max-w-md text-center">
-          <AlertTriangle className="w-8 h-8 mx-auto mb-3" />
-          <p>{error || "Problem not found"}</p>
+      <div className="h-screen flex items-center justify-center bg-[#05070a] font-sans">
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-6 py-6 rounded-xl max-w-lg text-center shadow-2xl">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+          <h3 className="text-xl font-bold mb-2 text-white">Access Denied</h3>
+          <p className="text-sm whitespace-pre-wrap">{error || "Problem not found"}</p>
+          <button 
+            onClick={() => navigate(-1)} 
+            className="mt-6 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-bold transition-all shadow-lg active:scale-95"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     );
   }
 
+  // --- MAIN RENDER ---
   return (
     <div className="h-screen flex flex-col bg-[#05070a] text-slate-300 font-sans overflow-hidden selection:bg-purple-500/30">
 
@@ -197,7 +249,6 @@ const ProblemSolvingPage = () => {
                 {problemData.difficulty}
               </button>
               
-              {/* --- UPDATED BUTTONS HERE --- */}
               <button 
                 className="hover:text-slate-200 transition-colors"
                 onClick={() => setIsSolutionOpen(true)}
@@ -210,8 +261,6 @@ const ProblemSolvingPage = () => {
               >
                 Submissions
               </button>
-              {/* ---------------------------- */}
-
             </div>
             <button className="flex items-center gap-1 text-[13px] font-semibold text-slate-400 hover:text-white transition-colors">
               <Star size={14} /> Add to List
@@ -239,7 +288,7 @@ const ProblemSolvingPage = () => {
                 <Database size={14} className="text-cyan-400" /> Memory Limit: {problemData.memoryLimitMb}MB
               </div>
               <div className="flex items-center gap-2 text-[13px] text-slate-400 bg-[#111624] w-fit px-3 py-1.5 rounded-lg border border-[#1a1f2e]">
-                <CheckCircle2 size={14} className="text-emerald-500" /> Acceptance: {problemData.acceptanceRate}%
+                <CheckCircle2 size={14} className="text-emerald-500" /> Acceptance: {problemData.acceptanceRate || 0}%
               </div>
               <div className="flex items-center gap-2 text-[13px] text-slate-400 bg-[#111624] w-fit px-3 py-1.5 rounded-lg border border-[#1a1f2e]">
                 <Coins size={14} className="text-yellow-500" /> Points: {problemData.points}
@@ -279,7 +328,6 @@ const ProblemSolvingPage = () => {
               </ul>
             </div>
 
-            {/* CTA Card */}
             <div 
               onClick={() => setIsSolutionOpen(true)}
               className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-purple-500/20 rounded-xl p-5 flex items-center justify-between group cursor-pointer hover:border-purple-500/40 transition-colors"
@@ -433,6 +481,15 @@ const ProblemSolvingPage = () => {
                         {getVerdictInfo(submissionResult?.status).text}
                       </h3>
                     </div>
+
+                    {/* AC Verdict in Contest - Show Success & Redirect Message */}
+                    {submissionResult?.status === 'AC' && contestId && (
+                      <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 px-4 py-4 rounded-lg mb-4 animate-pulse">
+                        <p className="text-sm font-bold mb-2">🎉 Problem Solved!</p>
+                        <p className="text-xs mb-2">Updating leaderboard for all participants...</p>
+                        <p className="text-xs text-emerald-400">Redirecting to arena in 3 seconds</p>
+                      </div>
+                    )}
 
                     {/* Performance Stats (Hide if pending or compile error) */}
                     {submissionResult?.status !== 'PENDING' && submissionResult?.status !== 'RUNNING' && submissionResult?.status !== 'CE' && submissionResult?.status !== 'ERROR' && (

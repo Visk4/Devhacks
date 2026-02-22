@@ -2,6 +2,7 @@ package com.shivsharan.backend.repository;
 
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,9 @@ import com.shivsharan.backend.model.Submission;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
+
+    @Query("SELECT s FROM Submission s LEFT JOIN FETCH s.contest LEFT JOIN FETCH s.user LEFT JOIN FETCH s.problem WHERE s.id = :id")
+    Optional<Submission> findById(@Param("id") UUID id);
 
     List<Submission> findByUser_IdOrderBySubmittedAtDesc(UUID userId);
     

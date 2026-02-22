@@ -27,6 +27,7 @@ import com.shivsharan.backend.enums.Verdict;
 import com.shivsharan.backend.model.Problem;
 import com.shivsharan.backend.model.Submission;
 import com.shivsharan.backend.model.User;
+import com.shivsharan.backend.repository.ContestRepository;
 import com.shivsharan.backend.repository.ProblemRepository;
 import com.shivsharan.backend.repository.SubmissionRepository;
 import com.shivsharan.backend.repository.UserRepository;
@@ -49,6 +50,9 @@ public class ProblemSubmitController {
 
     @Autowired
     private JobQueueService jobQueueService;
+
+    @Autowired
+    private ContestRepository contestRepository; // For handling contest submissions
 
     /**
      * Submit code for a problem to be judged
@@ -173,6 +177,12 @@ public class ProblemSubmitController {
         submission.setCode(dto.getCode());
         submission.setStatus(Verdict.PENDING);
         submission.setSubmittedAt(Instant.now());
+        
+        // If contestId is provided, link this submission to the contest
+        if (dto.getContestId() != null) {
+            contestRepository.findById(dto.getContestId()).ifPresent(submission::setContest);
+        }
+        
         return submission;
     }
 }

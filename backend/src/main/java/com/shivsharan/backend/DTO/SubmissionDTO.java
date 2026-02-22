@@ -24,4 +24,7 @@ public class SubmissionDTO implements Serializable {
     @NotBlank(message = "Code is required")
     @Size(min = 1, max = 100000, message = "Code must not exceed 100,000 characters")
     private String code;
+
+    // Optional: Contest context (for contest submissions)
+    private UUID contestId;
 }

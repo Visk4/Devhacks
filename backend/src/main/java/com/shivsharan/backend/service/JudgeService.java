@@ -32,6 +32,7 @@ import com.shivsharan.backend.enums.Verdict;
 import com.shivsharan.backend.judge.TestCaseResult;
 import com.shivsharan.backend.model.Contest;
 import com.shivsharan.backend.model.ContestParticipant;
+import com.shivsharan.backend.model.ContestParticipantId;
 import com.shivsharan.backend.model.Problem;
 import com.shivsharan.backend.model.Submission;
 import com.shivsharan.backend.model.TestCase;
@@ -383,14 +384,46 @@ public class JudgeService {
     /**
      * Update contest participant score after an AC submission
      */
+    @Transactional(propagation = Propagation.REQUIRED)
     private void updateContestParticipantScore(Submission sub) {
         try {
             Contest contest = sub.getContest();
+            if (contest == null) {
+                logger.error("❌ Contest is null for submission {}", sub.getId());
+                return;
+            }
+            
             UUID contestId = contest.getId();
             UUID userId = sub.getUser().getId();
             UUID problemId = sub.getProblem().getId();
 
-            // Check if this is the first AC for this problem (no other AC submissions before this one)
+            logger.info("💾 Updating contest participant score - Contest: {}, User: {}, Problem: {}", contestId, userId, problemId);
+
+            // ENSURE participant is registered FIRST (before any early returns)
+            Optional<ContestParticipant> optParticipant = contestParticipantRepository
+                    .findByContest_IdAndUser_Id(contestId, userId);
+
+            if (optParticipant.isEmpty()) {
+                logger.warn("⚠️ Participant not found for contest {} and user {}, auto-registering...", contestId, userId);
+                
+                ContestParticipantId participantId = new ContestParticipantId(contestId, userId);
+                ContestParticipant newParticipant = ContestParticipant.builder()
+                        .id(participantId)
+                        .contest(contest)
+                        .user(sub.getUser())
+                        .totalPoints(0)
+                        .totalPenalty(0)
+                        .isVirtual(false)
+                        .build();
+                
+                ContestParticipant saved = contestParticipantRepository.save(newParticipant);
+                contestParticipantRepository.flush();
+                logger.info("✅ Auto-registered participant: user={}, contest={}", userId, contestId);
+                
+                optParticipant = Optional.of(saved);
+            }
+            
+            // NOW check if this is the first AC
             List<Submission> previousAcSubmissions = submissionRepository
                     .findByContest_IdAndUser_IdAndProblem_Id(contestId, userId, problemId)
                     .stream()
@@ -399,16 +432,8 @@ public class JudgeService {
                     .toList();
 
             if (!previousAcSubmissions.isEmpty()) {
-                logger.info("Not first AC for problem {} in contest {}, skipping score update", problemId, contestId);
+                logger.info("⚠️ Not first AC for problem {} in contest {}, skipping score update", problemId, contestId);
                 return; // Not the first AC
-            }
-
-            Optional<ContestParticipant> optParticipant = contestParticipantRepository
-                    .findByContest_IdAndUser_Id(contestId, userId);
-
-            if (optParticipant.isEmpty()) {
-                logger.warn("Participant not found for contest {} and user {}", contestId, userId);
-                return;
             }
 
             ContestParticipant participant = optParticipant.get();
@@ -429,16 +454,19 @@ public class JudgeService {
             // Penalty = time + 20 min per wrong submission
             int penalty = timeMinutes + ((int) wrongAttempts * 20);
 
-            participant.setTotalPoints(participant.getTotalPoints() + problem.getPoints());
-            participant.setTotalPenalty(participant.getTotalPenalty() + penalty);
+            int oldPoints = participant.getTotalPoints() == null ? 0 : participant.getTotalPoints();
+            int oldPenalty = participant.getTotalPenalty() == null ? 0 : participant.getTotalPenalty();
+
+            participant.setTotalPoints(oldPoints + problem.getPoints());
+            participant.setTotalPenalty(oldPenalty + penalty);
             participant.setLastAcTime(acTime);
 
-            contestParticipantRepository.save(participant);
-            logger.info("Updated contest participant score: user={}, contest={}, +{}pts, penalty={}", 
-                    userId, contestId, problem.getPoints(), penalty);
+            ContestParticipant saved = contestParticipantRepository.save(participant);
+            logger.info("✅ Updated contest participant score: user={}, contest={}, oldPts={}, +{}pts (total={}), oldPen={}, +{}min (total={})", 
+                    userId, contestId, oldPoints, problem.getPoints(), saved.getTotalPoints(), oldPenalty, penalty, saved.getTotalPenalty());
 
         } catch (Exception e) {
-            logger.error("Error updating contest participant score", e);
+            logger.error("❌ Error updating contest participant score", e);
         }
     }
 

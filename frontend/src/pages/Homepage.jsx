@@ -20,8 +20,10 @@ const Homepage = () => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
+        setError(""); // Clear previous errors
+        
         const token = localStorage.getItem("accessToken");
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         // 1. Fetch user profile data
         const profileRes = await axios.get(`${baseURL}/profile`, { headers });
@@ -38,7 +40,25 @@ const Homepage = () => {
 
       } catch (err) {
         console.error("Error fetching homepage data:", err);
-        setError("Failed to load dashboard. Please try again later.");
+        
+        // --- ENHANCED ERROR EXTRACTION ---
+        let errorMessage = "Failed to load dashboard. ";
+        
+        if (err.response) {
+          // Server responded with an error status (4xx, 5xx)
+          if (err.response.status === 401 || err.response.status === 403) {
+             errorMessage = "Unauthorized (401/403): Your session may have expired. Please try logging in again.";
+          } else {
+             errorMessage += `Server Error (${err.response.status}): ${err.response.data?.message || err.response.data?.error || ''}`;
+          }
+        } else if (err.request) {
+          // No response received (Network error, CORS, Server offline)
+          errorMessage = "Network Error: Backend is unreachable. If your server is running, this is likely a CORS issue on your /api/profile endpoint.";
+        } else {
+          errorMessage += err.message;
+        }
+
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -61,10 +81,10 @@ const Homepage = () => {
   if (error || !profileData) {
     return (
       <div className="min-h-screen bg-[#05070a] flex items-center justify-center font-sans">
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-6 py-5 rounded-xl max-w-md text-center">
-          <AlertTriangle className="w-10 h-10 mx-auto mb-3" />
-          <h3 className="text-lg font-bold mb-1">Connection Error</h3>
-          <p className="text-sm">{error || "Could not retrieve profile data."}</p>
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-6 py-6 rounded-xl max-w-lg text-center shadow-2xl">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+          <h3 className="text-xl font-bold mb-2 text-white">Connection Error</h3>
+          <p className="text-sm whitespace-pre-wrap">{error}</p>
         </div>
       </div>
     );
