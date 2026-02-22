@@ -1,20 +1,45 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Check, Zap, AlertTriangle, X } from 'lucide-react';
 
-const RegisterContestModal = ({ isOpen, onClose, onSuccess }) => {
+const baseURL = import.meta.env.VITE_BASE_URL || 'http://localhost:8080/api';
+
+const RegisterContestModal = ({ isOpen, onClose, onSuccess, contestId, contestTitle }) => {
   const [isRegistered, setIsRegistered] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setIsRegistered(false);
+      setError('');
+      setIsSubmitting(false);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleRegister = () => {
-    setIsRegistered(true);
-    if (onSuccess) onSuccess(); 
+  const handleRegister = async () => {
+    if (!contestId) {
+      setError('Contest ID missing.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError('');
+      const token = localStorage.getItem('accessToken');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.post(`${baseURL}/contests/${contestId}/register`, {}, { headers });
+
+      setIsRegistered(true);
+      if (onSuccess) onSuccess(contestId);
+    } catch (err) {
+      const message = err?.response?.data?.error || err?.response?.data?.message || 'Failed to register for contest.';
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -53,7 +78,7 @@ const RegisterContestModal = ({ isOpen, onClose, onSuccess }) => {
               Enter the Arena
             </h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-6">
-              You are about to register for this contest. Prepare your IDE and review the rules before the countdown ends.
+              You are about to register for <span className="text-white font-semibold">{contestTitle || 'this contest'}</span>. Prepare your IDE and review the rules before the countdown ends.
             </p>
 
             {/* Warning Box */}
@@ -73,11 +98,16 @@ const RegisterContestModal = ({ isOpen, onClose, onSuccess }) => {
               </button>
               <button
                 onClick={handleRegister}
+                disabled={isSubmitting}
                 className="flex-[2] bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-3 rounded-xl text-sm font-bold shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_25px_rgba(147,51,234,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2"
               >
-                Confirm Registration
+                {isSubmitting ? 'Registering...' : 'Confirm Registration'}
               </button>
             </div>
+
+            {error && (
+              <p className="text-red-400 text-xs mt-4">{error}</p>
+            )}
           </div>
         ) : (
           /* --- STEP 2: SUCCESS STATE --- */

@@ -1,19 +1,38 @@
 package com.shivsharan.backend.service;
 
-import com.shivsharan.backend.DTO.*;
-import com.shivsharan.backend.enums.Verdict;
-import com.shivsharan.backend.model.*;
-import com.shivsharan.backend.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.shivsharan.backend.DTO.ContestDetailDTO;
+import com.shivsharan.backend.DTO.ContestListDTO;
+import com.shivsharan.backend.DTO.ContestSubmitRequest;
+import com.shivsharan.backend.DTO.CreateContestRequest;
+import com.shivsharan.backend.DTO.LeaderboardDTO;
+import com.shivsharan.backend.enums.Verdict;
+import com.shivsharan.backend.model.Contest;
+import com.shivsharan.backend.model.ContestParticipant;
+import com.shivsharan.backend.model.ContestParticipantId;
+import com.shivsharan.backend.model.ContestProblem;
+import com.shivsharan.backend.model.Problem;
+import com.shivsharan.backend.model.Submission;
+import com.shivsharan.backend.model.User;
+import com.shivsharan.backend.repository.ContestParticipantRepository;
+import com.shivsharan.backend.repository.ContestProblemRepository;
+import com.shivsharan.backend.repository.ContestRepository;
+import com.shivsharan.backend.repository.ProblemRepository;
+import com.shivsharan.backend.repository.SubmissionRepository;
 
 @Service
 public class ContestService {
@@ -272,6 +291,12 @@ public class ContestService {
         List<ContestParticipant> participants = participantRepository.findLeaderboard(contestId);
         List<ContestProblem> contestProblems = contestProblemRepository.findByContest_IdOrderByDisplayOrderAsc(contestId);
 
+        System.out.println("📊 Fetching leaderboard for contest: " + contestId);
+        System.out.println("   Participants: " + participants.size());
+        for (ContestParticipant p : participants) {
+            System.out.println("   - " + p.getUser().getUsername() + ": " + p.getTotalPoints() + " pts, penalty=" + p.getTotalPenalty());
+        }
+
         List<LeaderboardDTO.LeaderboardEntry> entries = new ArrayList<>();
         int rank = 1;
 
@@ -318,6 +343,7 @@ public class ContestService {
                     .build());
         }
 
+        System.out.println("✅ Leaderboard built with " + entries.size() + " entries");
         return LeaderboardDTO.builder()
                 .contestId(contestId)
                 .contestTitle(contest.getTitle())

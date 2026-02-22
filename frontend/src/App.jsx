@@ -37,7 +37,7 @@ const App = () => {
           <Route index element={<Practicepage />} />
         </Route>
 
-        {/* UPDATED: Dynamic route mapping to problem/:problemId */}
+        {/* Dynamic route mapping to problem/:problemId */}
         <Route path="problem" element={<ProblemLayout />}>
           <Route path=":problemId" element={<ProblemSolvingPage />} />
         </Route>
@@ -56,8 +56,9 @@ const App = () => {
 
         <Route path="login" element={<Loginpage />} />
         <Route path="register" element={<Registerpage />} />
+        
+        {/* Added Community Route */}
         <Route path="community" element={<CommunityPage />} />
-
 
         <Route path="games" element={<BaseLayout />}>
           <Route index element={<GamePage />} />
@@ -67,8 +68,9 @@ const App = () => {
           <Route index element={<MockInterviewPage />} />
         </Route>
 
-        <Route path="/ctrl-fix-it" element={<CtrlFixItPage />} />
-        <Route path="/battle" element={<BlitzBattlePage />} />
+        {/* Fixed relative paths (removed leading slash) */}
+        <Route path="ctrl-fix-it" element={<CtrlFixItPage />} />
+        <Route path="battle" element={<BlitzBattlePage />} />
       </Route>
     )
   );
