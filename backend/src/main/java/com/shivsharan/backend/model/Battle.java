@@ -45,6 +45,14 @@ public class Battle {
     @JoinColumn(name = "winner_id")
     private User winner;
 
+    /** Latest verdict string for player 1 (AC, WA, TLE, etc.) */
+    @Column(name = "player1_verdict", length = 20)
+    private String player1Verdict;
+
+    /** Latest verdict string for player 2 (AC, WA, TLE, etc.) */
+    @Column(name = "player2_verdict", length = 20)
+    private String player2Verdict;
+
     @Column(name = "created_at")
     private Instant createdAt;
 

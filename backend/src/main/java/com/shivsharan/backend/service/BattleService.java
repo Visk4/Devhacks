@@ -51,7 +51,7 @@ public class BattleService {
         battle = battleRepository.save(battle);
 
         logger.info("Battle room {} created by {}", code, creator.getUsername());
-        return toDTO(battle, null, null);
+        return toDTO(battle);
     }
 
     // ─── Join Room ───────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ public class BattleService {
         battle.setStartedAt(Instant.now());
         battle = battleRepository.save(battle);
 
-        BattleDTO dto = toDTO(battle, null, null);
+        BattleDTO dto = toDTO(battle);
 
         // Notify both players via WebSocket
         messagingTemplate.convertAndSend("/topic/battle/" + battle.getId(), dto);
@@ -88,7 +88,7 @@ public class BattleService {
     public BattleDTO getBattle(UUID battleId) {
         Battle battle = battleRepository.findById(battleId)
                 .orElseThrow(() -> new IllegalArgumentException("Battle not found"));
-        return toDTO(battle, null, null);
+        return toDTO(battle);
     }
 
     // ─── Get Battle by Party Code ────────────────────────────────────────
@@ -96,7 +96,7 @@ public class BattleService {
     public BattleDTO getBattleByCode(String partyCode) {
         Battle battle = battleRepository.findByPartyCode(partyCode.toUpperCase())
                 .orElseThrow(() -> new IllegalArgumentException("Room not found"));
-        return toDTO(battle, null, null);
+        return toDTO(battle);
     }
 
     // ─── Cancel Room ─────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ public class BattleService {
         battleRepository.save(battle);
 
         messagingTemplate.convertAndSend("/topic/battle/" + battle.getId(),
-                toDTO(battle, null, null));
+                toDTO(battle));
 
         logger.info("Battle room {} cancelled by {}", partyCode, user.getUsername());
     }
@@ -125,31 +125,38 @@ public class BattleService {
         UUID problemId = sub.getProblem().getId();
         UUID userId = sub.getUser().getId();
 
-        List<Battle> battles = battleRepository.findAll().stream()
-                .filter(b -> b.getStatus() == BattleStatus.IN_PROGRESS)
-                .filter(b -> b.getProblem() != null && b.getProblem().getId().equals(problemId))
-                .filter(b -> b.getPlayer1().getId().equals(userId) ||
-                             (b.getPlayer2() != null && b.getPlayer2().getId().equals(userId)))
-                .toList();
+        List<Battle> battles = battleRepository.findActiveBattlesForUser(
+                BattleStatus.IN_PROGRESS, problemId, userId);
 
         for (Battle battle : battles) {
+            // Guard: re-check status to prevent race condition with concurrent AC
+            if (battle.getStatus() != BattleStatus.IN_PROGRESS) {
+                logger.info("Battle {} already completed, skipping verdict update", battle.getPartyCode());
+                continue;
+            }
+
             boolean isPlayer1 = battle.getPlayer1().getId().equals(userId);
             String verdictStr = sub.getStatus().name();
 
-            String p1Verdict = isPlayer1 ? verdictStr : null;
-            String p2Verdict = !isPlayer1 ? verdictStr : null;
+            // Persist verdict on the Battle entity
+            if (isPlayer1) {
+                battle.setPlayer1Verdict(verdictStr);
+            } else {
+                battle.setPlayer2Verdict(verdictStr);
+            }
 
             // If AC → this player wins
             if (sub.getStatus() == Verdict.AC) {
                 battle.setWinner(sub.getUser());
                 battle.setStatus(BattleStatus.COMPLETED);
                 battle.setFinishedAt(Instant.now());
-                battleRepository.save(battle);
                 logger.info("Battle {} won by {} with AC!", battle.getPartyCode(),
                         sub.getUser().getUsername());
             }
 
-            BattleDTO dto = toDTO(battle, p1Verdict, p2Verdict);
+            battle = battleRepository.save(battle);
+
+            BattleDTO dto = toDTO(battle);
             messagingTemplate.convertAndSend("/topic/battle/" + battle.getId(), dto);
         }
     }
@@ -185,7 +192,7 @@ public class BattleService {
         throw new IllegalStateException("Could not generate unique party code");
     }
 
-    private BattleDTO toDTO(Battle b, String p1Verdict, String p2Verdict) {
+    private BattleDTO toDTO(Battle b) {
         BattleDTO dto = new BattleDTO();
         dto.setId(b.getId());
         dto.setPartyCode(b.getPartyCode());
@@ -224,9 +231,9 @@ public class BattleService {
             dto.setWinnerUsername(b.getWinner().getUsername());
         }
 
-        // Live verdicts
-        dto.setPlayer1Verdict(p1Verdict);
-        dto.setPlayer2Verdict(p2Verdict);
+        // Live verdicts — read from entity (persisted)
+        dto.setPlayer1Verdict(b.getPlayer1Verdict());
+        dto.setPlayer2Verdict(b.getPlayer2Verdict());
 
         return dto;
     }

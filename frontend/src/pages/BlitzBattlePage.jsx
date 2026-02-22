@@ -7,7 +7,7 @@ import SockJS from 'sockjs-client/dist/sockjs';
 import {
     Swords, Copy, Check, ArrowRight, Loader2, Clock, Trophy,
     Code2, CloudUpload, ChevronDown, AlertTriangle, XCircle,
-    CheckCircle2, Shield, Zap, Users, ArrowLeft, Skull
+    CheckCircle2, Shield, Zap, Users, ArrowLeft, Skull, Terminal
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_BASE_URL;
@@ -52,10 +52,13 @@ const BlitzBattlePage = () => {
     const [myVerdict, setMyVerdict] = useState(null);
     const [opponentVerdict, setOpponentVerdict] = useState(null);
     const [elapsed, setElapsed] = useState(0);
+    const [submissionResult, setSubmissionResult] = useState(null);
+    const [showOutput, setShowOutput] = useState(false);
 
     const stompRef = useRef(null);
     const timerRef = useRef(null);
     const battleRef = useRef(null);
+    const pollRef = useRef(null);
 
     // Keep ref in sync
     useEffect(() => { battleRef.current = battle; }, [battle]);
@@ -68,59 +71,96 @@ const BlitzBattlePage = () => {
         } catch { return null; }
     }, [token]);
 
+    // === Helper: process incoming battle data (from WS or poll) ===
+    const processBattleUpdate = useCallback((data) => {
+        setBattle(data);
+
+        const me = getMyUsername();
+        const amP1 = data.player1?.username === me;
+
+        // Update verdicts
+        if (data.player1Verdict) {
+            if (amP1) setMyVerdict(data.player1Verdict);
+            else setOpponentVerdict(data.player1Verdict);
+        }
+        if (data.player2Verdict) {
+            if (!amP1) setMyVerdict(data.player2Verdict);
+            else setOpponentVerdict(data.player2Verdict);
+        }
+
+        // Phase transitions
+        if (data.status === 'IN_PROGRESS' && !battleRef.current?.startedAt) {
+            setPhase('countdown');
+            // Keep polling active — it's our fallback if WebSocket drops
+        }
+        if (data.status === 'COMPLETED') {
+            setPhase('result');
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+        }
+        if (data.status === 'CANCELLED') {
+            setError('Room was cancelled');
+            setPhase('lobby');
+            if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+        }
+    }, [getMyUsername]);
+
+    // === Polling fallback: continuously poll battle state ===
+    const startPolling = useCallback((battleId) => {
+        if (pollRef.current) return;
+        pollRef.current = setInterval(async () => {
+            try {
+                const res = await axios.get(`${API_BASE}/battle/${battleId}`, { headers });
+                processBattleUpdate(res.data);
+            } catch (err) {
+                console.warn('Poll error:', err.message);
+            }
+        }, 2000);
+    }, [headers, processBattleUpdate]);
+
     // === WEBSOCKET ===
     const connectWS = useCallback((battleId) => {
         if (stompRef.current) return;
 
-        const client = new Client({
-            webSocketFactory: () => new SockJS(WS_URL),
-            reconnectDelay: 3000,
-            onConnect: () => {
-                client.subscribe(`/topic/battle/${battleId}`, (msg) => {
-                    const data = JSON.parse(msg.body);
-                    setBattle(data);
+        // Always start polling as a reliable fallback
+        startPolling(battleId);
 
-                    const me = getMyUsername();
-                    const amP1 = data.player1?.username === me;
+        try {
+            const client = new Client({
+                webSocketFactory: () => new SockJS(WS_URL),
+                reconnectDelay: 3000,
+                debug: (str) => console.log('[STOMP]', str),
+                onConnect: () => {
+                    console.log('[STOMP] Connected!');
+                    client.subscribe(`/topic/battle/${battleId}`, (msg) => {
+                        const data = JSON.parse(msg.body);
+                        processBattleUpdate(data);
+                    });
+                },
+                onStompError: (frame) => {
+                    console.error('[STOMP] Error:', frame.headers?.message);
+                },
+                onWebSocketError: (evt) => {
+                    console.warn('[STOMP] WebSocket error, polling is active as fallback');
+                },
+                onDisconnect: () => {
+                    console.log('[STOMP] Disconnected');
+                }
+            });
 
-                    // Update verdicts
-                    if (data.player1Verdict) {
-                        if (amP1) setMyVerdict(data.player1Verdict);
-                        else setOpponentVerdict(data.player1Verdict);
-                    }
-                    if (data.player2Verdict) {
-                        if (!amP1) setMyVerdict(data.player2Verdict);
-                        else setOpponentVerdict(data.player2Verdict);
-                    }
+            client.activate();
+            stompRef.current = client;
+        } catch (err) {
+            console.warn('[STOMP] Failed to create client, relying on polling:', err.message);
+        }
+    }, [processBattleUpdate, startPolling]);
 
-                    // Phase transitions
-                    if (data.status === 'IN_PROGRESS' && !battleRef.current?.startedAt) {
-                        setPhase('countdown');
-                    }
-                    if (data.status === 'COMPLETED') {
-                        setPhase('result');
-                        if (timerRef.current) clearInterval(timerRef.current);
-                    }
-                    if (data.status === 'CANCELLED') {
-                        setError('Room was cancelled');
-                        setPhase('lobby');
-                    }
-                });
-            },
-            onStompError: (frame) => {
-                console.error('STOMP error', frame);
-            }
-        });
-
-        client.activate();
-        stompRef.current = client;
-    }, [getMyUsername]);
-
-    // Cleanup WS on unmount
+    // Cleanup WS + polling on unmount
     useEffect(() => {
         return () => {
             if (stompRef.current) stompRef.current.deactivate();
             if (timerRef.current) clearInterval(timerRef.current);
+            if (pollRef.current) clearInterval(pollRef.current);
         };
     }, []);
 
@@ -187,6 +227,7 @@ const BlitzBattlePage = () => {
         setPartyCode('');
         setBattle(null);
         if (stompRef.current) { stompRef.current.deactivate(); stompRef.current = null; }
+        if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     };
 
     const copyCode = () => {
@@ -204,6 +245,8 @@ const BlitzBattlePage = () => {
         if (!code.trim() || isSubmitting || !battle?.problemId) return;
         setIsSubmitting(true);
         setMyVerdict('PENDING');
+        setSubmissionResult({ status: 'PENDING' });
+        setShowOutput(true);
 
         try {
             const postRes = await axios.post(`${API_BASE}/submissions`, {
@@ -216,16 +259,33 @@ const BlitzBattlePage = () => {
 
             // Poll for verdict
             let judged = false;
+            let finalStatus = null;
             while (!judged) {
                 await new Promise(r => setTimeout(r, 1500));
                 const getRes = await axios.get(`${API_BASE}/submissions/${submissionId}`, { headers });
                 const st = getRes.data.status;
                 setMyVerdict(st);
-                if (st !== 'PENDING' && st !== 'RUNNING') judged = true;
+                setSubmissionResult(getRes.data);
+                if (st !== 'PENDING' && st !== 'RUNNING') {
+                    judged = true;
+                    finalStatus = st;
+                }
+            }
+
+            // After judging completes, fetch latest battle state so result page shows
+            // (handles case where WebSocket missed the COMPLETED update)
+            if (finalStatus && battleRef.current?.id) {
+                try {
+                    const battleRes = await axios.get(`${API_BASE}/battle/${battleRef.current.id}`, { headers });
+                    processBattleUpdate(battleRes.data);
+                } catch (e) {
+                    console.warn('Battle refresh after submit failed:', e.message);
+                }
             }
         } catch (err) {
             console.error('Submit error:', err);
             setMyVerdict('ERROR');
+            setSubmissionResult({ status: 'ERROR', compileError: err.response?.data?.message || 'Network or server error occurred.' });
         } finally {
             setIsSubmitting(false);
         }
@@ -456,7 +516,7 @@ const BlitzBattlePage = () => {
 
                     <div className="flex gap-3 justify-center">
                         <button
-                            onClick={() => { setPhase('lobby'); setBattle(null); setPartyCode(''); setMyVerdict(null); setOpponentVerdict(null); if (stompRef.current) { stompRef.current.deactivate(); stompRef.current = null; } }}
+                            onClick={() => { setPhase('lobby'); setBattle(null); setPartyCode(''); setMyVerdict(null); setOpponentVerdict(null); setSubmissionResult(null); setShowOutput(false); if (stompRef.current) { stompRef.current.deactivate(); stompRef.current = null; } if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } }}
                             className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold transition-all"
                         >
                             Play Again
@@ -522,8 +582,8 @@ const BlitzBattlePage = () => {
                 <div className="w-[40%] border-r border-gray-800 overflow-y-auto p-6">
                     <div className="mb-4">
                         <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold uppercase ${battle?.problemDifficulty === 'EASY' ? 'bg-emerald-500/20 text-emerald-400' :
-                                battle?.problemDifficulty === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' :
-                                    'bg-red-500/20 text-red-400'
+                            battle?.problemDifficulty === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' :
+                                'bg-red-500/20 text-red-400'
                             }`}>
                             {battle?.problemDifficulty || 'UNKNOWN'}
                         </span>
@@ -561,8 +621,8 @@ const BlitzBattlePage = () => {
                             onClick={handleSubmit}
                             disabled={isSubmitting}
                             className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${isSubmitting
-                                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]'
                                 }`}
                         >
                             {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <CloudUpload size={14} />}
@@ -571,7 +631,7 @@ const BlitzBattlePage = () => {
                     </div>
 
                     {/* Monaco Editor */}
-                    <div className="flex-1">
+                    <div className={showOutput ? 'flex-1 min-h-0' : 'flex-1'}>
                         <Editor
                             height="100%"
                             language={language === 'cpp' ? 'cpp' : language}
@@ -589,6 +649,92 @@ const BlitzBattlePage = () => {
                             }}
                         />
                     </div>
+
+                    {/* Output / Result Panel */}
+                    {showOutput && submissionResult && (
+                        <div className="h-[180px] border-t border-gray-800 bg-[#0b0d1a] flex flex-col shrink-0">
+                            <div className="flex items-center justify-between px-4 py-1.5 border-b border-gray-800">
+                                <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
+                                    <Terminal size={13} className="text-cyan-400" />
+                                    <span>Output</span>
+                                </div>
+                                <button
+                                    onClick={() => setShowOutput(false)}
+                                    className="text-gray-500 hover:text-white text-xs px-2 py-0.5 rounded transition-colors"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                                {/* Verdict Banner */}
+                                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${submissionResult.status === 'AC' ? 'bg-emerald-500/10 border-emerald-500/30' :
+                                    submissionResult.status === 'WA' ? 'bg-red-500/10 border-red-500/30' :
+                                        submissionResult.status === 'TLE' ? 'bg-orange-500/10 border-orange-500/30' :
+                                            submissionResult.status === 'CE' ? 'bg-pink-500/10 border-pink-500/30' :
+                                                submissionResult.status === 'RE' ? 'bg-rose-500/10 border-rose-500/30' :
+                                                    submissionResult.status === 'MLE' ? 'bg-yellow-500/10 border-yellow-500/30' :
+                                                        'bg-cyan-500/10 border-cyan-500/30'
+                                    }`}>
+                                    <span className={getVerdictInfo(submissionResult.status).color}>
+                                        {getVerdictInfo(submissionResult.status).icon}
+                                    </span>
+                                    <span className={`font-bold text-sm ${getVerdictInfo(submissionResult.status).color}`}>
+                                        {getVerdictInfo(submissionResult.status).text}
+                                    </span>
+                                </div>
+
+                                {/* Runtime & Memory Stats */}
+                                {submissionResult.status !== 'PENDING' && submissionResult.status !== 'RUNNING' &&
+                                    submissionResult.status !== 'CE' && submissionResult.status !== 'ERROR' && (
+                                        <div className="flex gap-6 text-xs">
+                                            <div>
+                                                <span className="text-gray-500 font-semibold uppercase tracking-wider">Runtime </span>
+                                                <span className="text-gray-300 font-mono">{submissionResult.timeMs ?? 0} ms</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-500 font-semibold uppercase tracking-wider">Memory </span>
+                                                <span className="text-gray-300 font-mono">{submissionResult.memoryKb ?? 0} KB</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                {/* Compile Error */}
+                                {submissionResult.compileError && (
+                                    <div>
+                                        <p className="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-1">Compiler Output</p>
+                                        <pre className="bg-pink-500/5 border border-pink-500/20 text-pink-200/80 p-3 rounded-lg text-xs font-mono overflow-x-auto whitespace-pre-wrap">
+                                            {submissionResult.compileError}
+                                        </pre>
+                                    </div>
+                                )}
+
+                                {/* Test Case Details */}
+                                {submissionResult.verdictDetail && (() => {
+                                    try {
+                                        const cases = JSON.parse(submissionResult.verdictDetail);
+                                        return (
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Test Cases</p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {cases.map((tc, i) => (
+                                                        <span
+                                                            key={i}
+                                                            className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold ${tc.verdict === 'AC'
+                                                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                                                : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                                                                }`}
+                                                        >
+                                                            #{i + 1} {tc.verdict}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    } catch { return null; }
+                                })()}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

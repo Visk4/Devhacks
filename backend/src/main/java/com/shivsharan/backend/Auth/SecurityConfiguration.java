@@ -71,6 +71,7 @@ public class SecurityConfiguration {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/api/signUp", "/api/login", "/api/refresh-token", "/api/trySending","/api/problems","/test_data/*").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/problem/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/contests", "/api/contests/**").permitAll()
