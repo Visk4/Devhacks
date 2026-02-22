@@ -34,7 +34,7 @@ const EditorPanel = ({ code, setCode, onRun, output, language }) => {
         <div className="flex gap-4">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e1e1e] rounded-t border-t border-cyan-500 text-gray-300 text-sm shadow-[0_-2px_10px_rgba(6,182,212,0.1)]">
             <FileCode2 className="w-4 h-4 text-cyan-400" />
-            solution.{getFileExtension(language)}
+            Solution.{getFileExtension(language)}
           </div>
         </div>
         <button 

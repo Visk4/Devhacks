@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, Flame, Trophy } from 'lucide-react';
 
-const WelcomeCard = () => {
+const WelcomeCard = ({ profileData }) => {
   return (
     <div className="w-full bg-[#111322] border border-[#1e223b] rounded-2xl p-5 md:py-1 md:px-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 font-sans shadow-lg shadow-black/20">
       
@@ -15,7 +15,7 @@ const WelcomeCard = () => {
         {/* Text Content */}
         <div className="flex flex-col">
           <h2 className="text-xl md:text-[22px] font-bold text-white tracking-wide mb-1">
-            Welcome back, <span className="text-cyan-400">AlexCoder</span>
+            Welcome back, <span className="text-cyan-400">{profileData?.username || 'Gladiator'}</span>
           </h2>
           <div className="flex items-center gap-2">
             {/* Pulsing Green Dot */}
@@ -28,7 +28,6 @@ const WelcomeCard = () => {
       </div>
 
       {/* Right Section: Stats Row */}
-      {/* FIX: Changed pb-2 md:pb-0 to py-3 to give the cards vertical room to float up and drop shadows without clipping inside the overflow-x-auto container */}
       <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto py-3 px-1 hide-scrollbar -mx-1">
         
         {/* Rating Stat (Cyan Theme on Hover) */}
@@ -38,7 +37,7 @@ const WelcomeCard = () => {
           </span>
           <div className="flex items-center gap-2 text-white font-bold text-lg group-hover:text-cyan-50 transition-colors">
             <TrendingUp size={18} className="text-cyan-400 group-hover:scale-110 transition-transform duration-300" />
-            1,842
+            {profileData?.rating || 0}
           </div>
         </div>
 
@@ -49,7 +48,7 @@ const WelcomeCard = () => {
           </span>
           <div className="flex items-center gap-2 text-white font-bold text-lg group-hover:text-orange-50 transition-colors">
             <Flame size={18} className="text-orange-500 fill-orange-500/20 group-hover:scale-110 transition-transform duration-300" />
-            12 Days
+            {profileData?.streak || 0} Days
           </div>
         </div>
 
@@ -60,7 +59,7 @@ const WelcomeCard = () => {
           </span>
           <div className="flex items-center gap-2 text-white font-bold text-lg group-hover:text-yellow-50 transition-colors">
             <Trophy size={18} className="text-yellow-500 fill-yellow-500/20 group-hover:scale-110 transition-transform duration-300" />
-            #402
+            #{profileData?.globalRank || '---'}
           </div>
         </div>
 
