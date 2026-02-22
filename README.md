@@ -2,43 +2,58 @@
 
 # ⚡ CodeStorm
 
-### Competitive Programming Arena
+**Competitive Programming Arena**
+
+<br>
 
 *Where Code Meets Competition*
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.3-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev)
-[![Docker](https://img.shields.io/badge/Docker-Sandbox-2496ED?logo=docker&logoColor=white)](https://docker.com)
-[![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://mysql.com)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<br>
 
-**A full-stack competitive programming platform with Docker-sandboxed code execution, real-time 1v1 battles, AI-powered plagiarism detection, and gamified learning — built for DevHacks 2026.**
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![Docker](https://img.shields.io/badge/Docker-Sandbox-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://mysql.com)
 
-[Features](#-features) · [Architecture](#-system-architecture) · [Sandbox](#-docker-sandbox-secure-code-execution) · [AI Integration](#-gemini-ai-integration) · [API Reference](#-api-reference) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started)
+<br>
+
+A full-stack competitive programming platform with **Docker-sandboxed code execution**,<br>
+**real-time 1v1 battles**, **AI-powered plagiarism detection**, and **gamified learning**.<br>
+Built for **DevHacks 2026**.
+
+<br>
+
+[Features](#-features) · [Architecture](#%EF%B8%8F-system-architecture) · [Sandbox](#-docker-sandbox-secure-code-execution) · [AI Integration](#-gemini-ai-integration) · [API Reference](#-api-reference) · [Tech Stack](#%EF%B8%8F-tech-stack) · [Getting Started](#-getting-started)
 
 </div>
+
+<br>
 
 ---
 
 ## 🚀 Features
 
-| Feature | Description |
-|---------|-------------|
-| **🏋️ Practice Arena** | Solve coding problems with real-time judging across C++, Java, and Python |
-| **⚔️ 1v1 Blitz Battles** | Real-time head-to-head coding duels via WebSocket with live opponent tracking |
-| **🏆 Contest System** | Create & join timed contests with live leaderboards and score tracking |
-| **🤖 AI Hints** | Progressive 3-level hint system powered by Gemini 2.5 Flash |
-| **🛡️ Auto Plagiarism Detection** | Every submission analyzed for AI-generation and copy-paste before execution |
-| **💼 Mock Interviews** | FAANG-style AI interview evaluation with hire/no-hire recommendations |
-| **🎮 Game Modes** | Blitz battles, Ctrl+Fix It (debug challenges), and competitive contests |
-| **👥 Community Forum** | Discussion posts with tags and engagement |
-| **🪙 Gamification** | Coins, XP, streaks, and profile stats |
-| **🔐 Dual Auth** | JWT + OAuth 2.0 (GitHub & Google) with email OTP verification |
+<table>
+<tr><td>🏋️ <b>Practice Arena</b></td><td>Solve coding problems with real-time judging across C++, Java, and Python</td></tr>
+<tr><td>⚔️ <b>1v1 Blitz Battles</b></td><td>Real-time head-to-head coding duels via WebSocket with live opponent tracking</td></tr>
+<tr><td>🏆 <b>Contest System</b></td><td>Create & join timed contests with live leaderboards and score tracking</td></tr>
+<tr><td>🤖 <b>AI Hints</b></td><td>Progressive 3-level hint system powered by Gemini 2.5 Flash</td></tr>
+<tr><td>🛡️ <b>Auto Plagiarism Detection</b></td><td>Every submission analyzed for AI-generation and copy-paste before execution</td></tr>
+<tr><td>💼 <b>Mock Interviews</b></td><td>FAANG-style AI interview evaluation with hire/no-hire recommendations</td></tr>
+<tr><td>🎮 <b>Game Modes</b></td><td>Blitz battles, Ctrl+Fix It (debug challenges), and competitive contests</td></tr>
+<tr><td>👥 <b>Community Forum</b></td><td>Discussion posts with tags and engagement</td></tr>
+<tr><td>🪙 <b>Gamification</b></td><td>Coins, XP, streaks, and profile stats</td></tr>
+<tr><td>🔐 <b>Dual Auth</b></td><td>JWT + OAuth 2.0 (GitHub & Google) with email OTP verification</td></tr>
+</table>
 
 ---
 
 ## 🏗️ System Architecture
+
+<details>
+<summary><b>Click to expand full architecture diagram</b></summary>
+<br>
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -86,13 +101,20 @@
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
+</details>
+
 ---
 
 ## 🐳 Docker Sandbox: Secure Code Execution
 
-Executing untrusted user code on a server is extremely dangerous — users could wipe the filesystem, fork-bomb the server, open network connections, or consume infinite resources. CodeStorm solves this with a **5-layer defense-in-depth isolation architecture**.
+> [!IMPORTANT]
+> Executing untrusted user code on a server is extremely dangerous — users could wipe the filesystem, fork-bomb the server, open network connections, or consume infinite resources.
 
-### Layer Breakdown
+CodeStorm solves this with a **5-layer defense-in-depth isolation architecture**:
+
+<details>
+<summary><b>🔒 View 5-Layer Security Breakdown</b></summary>
+<br>
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -131,6 +153,8 @@ Executing untrusted user code on a server is extremely dangerous — users could
 └──────────────────────────────────────────────────────────┘
 ```
 
+</details>
+
 ### Seccomp Profile
 
 The seccomp profile uses a **default-KILL policy** — any system call not explicitly whitelisted will instantly terminate the process at the kernel level.
@@ -153,6 +177,7 @@ The seccomp profile uses a **default-KILL policy** — any system call not expli
 }
 ```
 
+> [!NOTE]
 > Only ~50 safe operations are permitted. Network syscalls (`socket`, `connect`, `bind`) are completely absent — making it impossible to open any network connection from user code.
 
 ---
@@ -160,6 +185,10 @@ The seccomp profile uses a **default-KILL policy** — any system call not expli
 ## ⚖️ Online Judge Engine
 
 ### Judging Pipeline
+
+<details>
+<summary><b>View complete judging flow</b></summary>
+<br>
 
 ```
 Submit Code → Job Queue (Async) → Plagiarism Check (Gemini AI)
@@ -189,6 +218,8 @@ Submit Code → Job Queue (Async) → Plagiarism Check (Gemini AI)
                         (real-time         (if 1v1 →
                          to client)         update state)
 ```
+
+</details>
 
 ### Supported Languages
 
@@ -253,6 +284,7 @@ Code Submitted
       └── LIKELY_PLAGIARISED → automatic penalty applied
 ```
 
+> [!TIP]
 > Plagiarism check runs **before** sandbox execution — catching cheating before wasting compute resources.
 
 ### 3. Mock Interview Evaluator (`GeminiInterviewService`)
@@ -271,7 +303,11 @@ Also supports generating interview-style questions from any problem.
 
 ## ⚔️ 1v1 Blitz Battle System
 
-Real-time competitive coding duels powered by WebSocket:
+Real-time competitive coding duels powered by WebSocket.
+
+<details>
+<summary><b>View WebSocket battle sequence diagram</b></summary>
+<br>
 
 ```
      Player 1                    Server                    Player 2
@@ -295,6 +331,8 @@ Real-time competitive coding duels powered by WebSocket:
         │◀── WebSocket: BATTLE_COMPLETED ───────────────────▶│
         │        (Winner declared, stats shown)               │
 ```
+
+</details>
 
 **Battle States:** `WAITING` → `IN_PROGRESS` → `COMPLETED`
 
@@ -352,7 +390,9 @@ User → Login → Spring Security AuthManager → BCrypt validation
 
 ## 🗄️ Database Schema
 
-### Entity Relationship Overview
+<details>
+<summary><b>Entity Relationship Overview</b></summary>
+<br>
 
 ```
 Users ─────────┬──── Submissions ────── Problems
@@ -374,6 +414,8 @@ Problems ─────┬──── Topics (many-to-many)
               └──── ProblemSolutions
 ```
 
+</details>
+
 ### Key Entities (18 total)
 
 | Entity | Purpose | Key Fields |
@@ -393,7 +435,10 @@ Problems ─────┬──── Topics (many-to-many)
 
 ## 📡 API Reference
 
-### Auth & Users
+<details>
+<summary><b>Auth & Users</b></summary>
+<br>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/signUp` | Register with OTP verification |
@@ -402,7 +447,12 @@ Problems ─────┬──── Topics (many-to-many)
 | `GET` | `/api/profile` | User profile with stats |
 | | | OAuth2: GitHub + Google login flows |
 
-### Problems & Judging
+</details>
+
+<details>
+<summary><b>Problems & Judging</b></summary>
+<br>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/problems` | Browse problems (filtered by difficulty/topic) |
@@ -410,7 +460,12 @@ Problems ─────┬──── Topics (many-to-many)
 | `POST` | `/api/submissions` | Submit code → async judging pipeline |
 | `GET` | `/api/submissions/{id}` | Poll submission result |
 
-### Battles
+</details>
+
+<details>
+<summary><b>Battles</b></summary>
+<br>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/battle/create` | Create 1v1 room |
@@ -418,7 +473,12 @@ Problems ─────┬──── Topics (many-to-many)
 | `GET` | `/api/battle/code/{code}` | Poll battle state |
 | | `/topic/battle/{id}` | WebSocket: real-time updates |
 
-### Contests
+</details>
+
+<details>
+<summary><b>Contests</b></summary>
+<br>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET/POST/PUT/DELETE` | `/api/contests` | Full CRUD |
@@ -426,7 +486,12 @@ Problems ─────┬──── Topics (many-to-many)
 | `POST` | `/api/contests/{id}/submit` | Contest submission |
 | `GET` | `/api/contests/{id}/leaderboard` | Live rankings |
 
-### AI Services
+</details>
+
+<details>
+<summary><b>AI Services</b></summary>
+<br>
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/hints` | Get progressive AI hints |
@@ -434,11 +499,18 @@ Problems ─────┬──── Topics (many-to-many)
 | `POST` | `/api/interview/evaluate` | Mock interview evaluation |
 | `POST` | `/api/interview/questions` | Generate interview questions |
 
-### WebSocket Channels
+</details>
+
+<details>
+<summary><b>WebSocket Channels</b></summary>
+<br>
+
 | Channel | Description |
 |---------|-------------|
 | `/user/queue/submission-result` | Personal judging results |
 | `/topic/battle/{battleId}` | Battle state broadcasts |
+
+</details>
 
 ---
 
@@ -520,10 +592,14 @@ Problems ─────┬──── Topics (many-to-many)
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Java 17+
-- Node.js 18+
-- MySQL 8.0
-- Docker Desktop
+
+> [!NOTE]
+> Make sure you have the following installed before proceeding.
+
+- **Java 17+**
+- **Node.js 18+**
+- **MySQL 8.0**
+- **Docker Desktop**
 
 ### Backend Setup
 ```bash
@@ -559,18 +635,22 @@ The frontend will be available at `http://localhost:5173` and the backend at `ht
 
 ## 📈 Future Roadmap
 
-- **AI Code Reviews** — Gemini-powered line-by-line code review feedback
-- **Team Battles** — 2v2 and 3v3 team competitive modes
-- **Live Spectating** — Watch ongoing battles in real-time
-- **Problem Creation Studio** — AI-assisted problem statement & test case generation
-- **Mobile App** — React Native companion app
-- **Analytics Dashboard** — ML-powered skill gap analysis & personalized practice
+| Feature | Description |
+|---------|-------------|
+| 🔍 **AI Code Reviews** | Gemini-powered line-by-line code review feedback |
+| 👥 **Team Battles** | 2v2 and 3v3 team competitive modes |
+| 📺 **Live Spectating** | Watch ongoing battles in real-time |
+| ✨ **Problem Creation Studio** | AI-assisted problem statement & test case generation |
+| 📱 **Mobile App** | React Native companion app |
+| 📊 **Analytics Dashboard** | ML-powered skill gap analysis & personalized practice |
 
 ---
 
 <div align="center">
+<br>
 
 *Built with ❤️ for DevHacks 2026*
 
+<br>
 </div>
 ]]>
