@@ -291,12 +291,6 @@ public class ContestService {
         List<ContestParticipant> participants = participantRepository.findLeaderboard(contestId);
         List<ContestProblem> contestProblems = contestProblemRepository.findByContest_IdOrderByDisplayOrderAsc(contestId);
 
-        System.out.println("📊 Fetching leaderboard for contest: " + contestId);
-        System.out.println("   Participants: " + participants.size());
-        for (ContestParticipant p : participants) {
-            System.out.println("   - " + p.getUser().getUsername() + ": " + p.getTotalPoints() + " pts, penalty=" + p.getTotalPenalty());
-        }
-
         List<LeaderboardDTO.LeaderboardEntry> entries = new ArrayList<>();
         int rank = 1;
 
@@ -343,7 +337,6 @@ public class ContestService {
                     .build());
         }
 
-        System.out.println("✅ Leaderboard built with " + entries.size() + " entries");
         return LeaderboardDTO.builder()
                 .contestId(contestId)
                 .contestTitle(contest.getTitle())

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Target, Trophy, Skull, Rocket, ArrowRight, Zap, MapPin, Code } from 'lucide-react';
 
 const gameModes = [
@@ -40,7 +41,7 @@ const gameModes = [
   },
   {
     id: 'royale',
-    title: "Battle Royale",
+    title: "Battle Arena",
     description: "Last coder standing wins. 50 players max.",
     icon: Skull,
     buttonText: "Drop In",
@@ -77,6 +78,27 @@ const gameModes = [
 ];
 
 const ActionCardsGrid = () => {
+  const navigate = useNavigate();
+
+  const getModeRoute = (modeId) => {
+    switch (modeId) {
+      case '1v1':
+        return '/battle';
+      case 'weekly':
+        return '/contests';
+      case 'royale':
+        return '/games';
+      case 'practice':
+        return '/practice';
+      default:
+        return '/home';
+    }
+  };
+
+  const handleModeClick = (modeId) => {
+    navigate(getModeRoute(modeId));
+  };
+
   return (
     <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 font-sans mt-8">
       {gameModes.map((mode) => {
@@ -87,6 +109,7 @@ const ActionCardsGrid = () => {
           <div 
             key={mode.id}
             className={`relative flex flex-col justify-between p-5 md:p-6 rounded-2xl bg-[#0b0f19] border transition-all duration-300 overflow-hidden cursor-pointer group min-h-[260px] ${mode.theme.border} ${mode.theme.shadow}`}
+            onClick={() => handleModeClick(mode.id)}
           >
             {/* 1. Base Image */}
             <div 
@@ -128,6 +151,10 @@ const ActionCardsGrid = () => {
               {/* Action Button */}
               <button 
                 className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-bold text-sm transition-all duration-300 ${mode.theme.btnBg} group-hover:brightness-110 active:scale-[0.98]`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleModeClick(mode.id);
+                }}
               >
                 {mode.buttonText}
                 <ButtonIcon size={16} />

@@ -4,18 +4,17 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.shivsharan.backend.model.User;
-import com.shivsharan.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.stereotype.Component;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
 
-
+import com.shivsharan.backend.model.User;
+import com.shivsharan.backend.repository.UserRepository;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,11 +64,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String accessToken = jwtUtility.generateToken(user.getUsername());
         String refreshToken = jwtUtility.generateRefreshToken(user.getUsername());
 
-        addCookie(response, "access_token", accessToken, jwtExpirationMs);
-        addCookie(response, "refresh_token", refreshToken, refreshExpirationMs);
+        // Send tokens as URL parameters instead of HttpOnly cookies (so JavaScript can access them)
+        String redirectUrl = String.format("%s?access_token=%s&refresh_token=%s&username=%s", 
+            successRedirect, accessToken, refreshToken, user.getUsername());
 
         response.setStatus(HttpServletResponse.SC_FOUND);
-        response.setHeader("Location", successRedirect);
+        response.setHeader("Location", redirectUrl);
     }
 
     private User resolveOrCreateUser(String username, String email, String profileImageUrl) {

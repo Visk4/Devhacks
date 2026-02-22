@@ -22,6 +22,9 @@ import ContestsPage from "./pages/ContestsPage";
 import ContestArena from "./pages/ContestArena";
 import MockInterviewPage from "./pages/MockInterviewPage";
 import BlitzBattlePage from "./pages/BlitzBattlePage";
+import SubmissionsPage from "./pages/SubmissionsPage";
+import SolutionPage from "./pages/SolutionPage";
+import OAuth2Callback from "./pages/OAuth2Callback";
 
 const App = () => {
   const router = createBrowserRouter(
@@ -35,6 +38,14 @@ const App = () => {
 
         <Route path="practice" element={<BaseLayout />}>
           <Route index element={<Practicepage />} />
+        </Route>
+
+        <Route path="submissions" element={<BaseLayout />}>
+          <Route index element={<SubmissionsPage />} />
+        </Route>
+
+        <Route path="solutions" element={<BaseLayout />}>
+          <Route path=":problemId" element={<SolutionPage />} />
         </Route>
 
         {/* Dynamic route mapping to problem/:problemId */}
@@ -56,6 +67,7 @@ const App = () => {
 
         <Route path="login" element={<Loginpage />} />
         <Route path="register" element={<Registerpage />} />
+        <Route path="oauth2/callback" element={<OAuth2Callback />} />
         
         {/* Added Community Route */}
         <Route path="community" element={<CommunityPage />} />

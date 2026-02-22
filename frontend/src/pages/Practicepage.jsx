@@ -6,10 +6,10 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-const baseURL = import.meta.env.VITE_BASE_URL;
+const baseURL = import.meta.env.VITE_BASE_URL || 'http://localhost:8080/api';
 // --- SUB-COMPONENTS ---
 
-const PracticeHeader = () => (
+const PracticeHeader = ({ streakDays, solvedTodayCount }) => (
   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
     <div>
       <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2 font-display">
@@ -30,7 +30,7 @@ const PracticeHeader = () => (
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Solved Today</span>
-            <span className="text-white font-bold text-sm leading-none">3 <span className="text-slate-500 font-medium text-xs">/ 5 goal</span></span>
+            <span className="text-white font-bold text-sm leading-none">{solvedTodayCount} <span className="text-slate-500 font-medium text-xs">/ 5 goal</span></span>
           </div>
         </div>
         
@@ -41,7 +41,7 @@ const PracticeHeader = () => (
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Streak</span>
-            <span className="text-white font-bold text-sm leading-none">12 <span className="text-slate-500 font-medium text-xs">days</span></span>
+            <span className="text-white font-bold text-sm leading-none">{streakDays} <span className="text-slate-500 font-medium text-xs">days</span></span>
           </div>
         </div>
       </div>
@@ -287,6 +287,7 @@ const RightSidebar = () => (
 const Practicepage = () => {
   const navigate = useNavigate();
   const [problemsData, setProblemsData] = useState([]);
+  const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [needsConsent, setNeedsConsent] = useState(false);
@@ -302,9 +303,15 @@ const Practicepage = () => {
     const fetchProblems = async () => {
       try {
         const token = localStorage.getItem("accessToken");
-        const response = await axios.get(`${baseURL}/problems`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const [problemsResponse, profileResponse] = await Promise.all([
+          axios.get(`${baseURL}/problems`, { headers }),
+          axios.get(`${baseURL}/profile`, { headers }).catch(() => ({ data: null }))
+        ]);
+
+        setProfileData(profileResponse.data || null);
+        const response = problemsResponse;
         console.log("Fetched problems:", response.data);
         const contentType = response.headers && (response.headers['content-type'] || response.headers['Content-Type']);
         // Some proxies (ngrok free) may return an HTML error page. Detect that and show a helpful error.
@@ -322,13 +329,41 @@ const Practicepage = () => {
         // Normalize response to an array. Backend should return an array, but
         // some proxies or wrappers may return { data: [...] } or an object.
         const payload = response.data;
+        const normalizeProblems = (raw) => {
+          if (Array.isArray(raw)) return raw;
+          if (raw && Array.isArray(raw.data)) return raw.data;
+          return raw ? [raw] : [];
+        };
+
+        const baseProblems = normalizeProblems(payload);
+
+        const enrichedProblems = await Promise.all(
+          baseProblems.map(async (problem) => {
+            try {
+              const detailRes = await axios.get(`${baseURL}/problem/${problem.id}`, { headers });
+              const detail = detailRes.data || {};
+              const solved = Boolean(detail.solvedByUser);
+              const hasAttempts = Array.isArray(detail.mySubmissions) && detail.mySubmissions.length > 0;
+              return {
+                ...problem,
+                status: solved ? 'solved' : (hasAttempts ? 'attempted' : 'todo')
+              };
+            } catch {
+              return {
+                ...problem,
+                status: problem.status || 'todo'
+              };
+            }
+          })
+        );
+
         if (Array.isArray(payload)) {
-          setProblemsData(payload);
+          setProblemsData(enrichedProblems);
         } else if (payload && Array.isArray(payload.data)) {
-          setProblemsData(payload.data);
+          setProblemsData(enrichedProblems);
         } else {
           // Fallback: if it's a single object, wrap it; otherwise use empty array
-          setProblemsData(payload ? [payload] : []);
+          setProblemsData(enrichedProblems);
         }
       } catch (err) {
         console.error("Error fetching problems:", err);
@@ -339,6 +374,27 @@ const Practicepage = () => {
     };
     fetchProblems();
   }, []);
+
+  const getSolvedTodayCount = () => {
+    const recentSubmissions = profileData?.recentSubmissions;
+    if (!Array.isArray(recentSubmissions) || recentSubmissions.length === 0) {
+      return 0;
+    }
+
+    const todayKey = new Date().toDateString();
+    const solvedTodaySet = new Set();
+
+    recentSubmissions.forEach((submission) => {
+      if (!submission || submission.status !== 'AC' || !submission.submittedAt) return;
+      const submittedDate = new Date(submission.submittedAt).toDateString();
+      if (submittedDate === todayKey) {
+        const problemKey = submission.problemId || submission.problem?.id || submission.id;
+        solvedTodaySet.add(problemKey);
+      }
+    });
+
+    return solvedTodaySet.size;
+  };
 
   const handleProblemClick = (problemId) => {
     navigate(`/problem/${problemId}`);
@@ -390,7 +446,10 @@ const Practicepage = () => {
       <div className="fixed top-0 left-1/4 w-[800px] h-[400px] bg-cyan-900/10 rounded-full blur-[150px] pointer-events-none z-0"></div>
 
       <main className="relative z-10 max-w-[1400px] mx-auto px-4 lg:px-8 py-8">
-        <PracticeHeader />
+        <PracticeHeader
+          streakDays={profileData?.streak || 0}
+          solvedTodayCount={getSolvedTodayCount()}
+        />
         
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8">
           

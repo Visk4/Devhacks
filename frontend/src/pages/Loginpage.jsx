@@ -52,8 +52,9 @@ const Loginpage = () => {
   };
 
   const handleGoogleSignIn = () => {
-    // Add your Google auth logic here
-    console.log("Initiating Google Sign-In");
+    // Redirect to backend OAuth2 Google endpoint (OAuth2 is at root level, not /api)
+    const backendBaseURL = baseURL.replace('/api', '');
+    window.location.href = `${backendBaseURL}/oauth2/authorization/google`;
   };
 
   return (

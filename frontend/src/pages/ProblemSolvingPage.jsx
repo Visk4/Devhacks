@@ -5,10 +5,9 @@ import axios from 'axios';
 import { 
   Code2, Flame, Coins, Bell, Star, Clock, Database, CheckCircle2, 
   ChevronDown, RotateCcw, Settings, Maximize, Play, CloudUpload, 
-  Terminal, ListTodo, HelpCircle, AlertCircle, AlertTriangle, ChevronRight,
-  Loader2, XCircle
+  Terminal, ListTodo, HelpCircle, AlertCircle, AlertTriangle,
+  Loader2, XCircle, ShieldCheck
 } from 'lucide-react';
-import SolutionModal from '../components/Practice/SolutionModal';
 
 const baseURL = import.meta.env.VITE_BASE_URL || 'http://localhost:8080/api';
 
@@ -48,6 +47,13 @@ const ProblemSolvingPage = () => {
   // Submission States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState(null);
+  const [selectedPreviousSubmissionId, setSelectedPreviousSubmissionId] = useState(null);
+  const [hintResult, setHintResult] = useState(null);
+  const [hintLoading, setHintLoading] = useState(false);
+  const [hintError, setHintError] = useState('');
+  const [plagiarismResult, setPlagiarismResult] = useState(null);
+  const [plagiarismLoading, setPlagiarismLoading] = useState(false);
+  const [plagiarismError, setPlagiarismError] = useState('');
 
   // Real-time leaderboard polling
   const leaderboardPollingRef = useRef(null);
@@ -58,7 +64,7 @@ const ProblemSolvingPage = () => {
   const [activeTab, setActiveTab] = useState('description');
   const [activeTestCase, setActiveTestCase] = useState(0); 
   const [consoleTab, setConsoleTab] = useState('testcases');
-  const [isSolutionOpen, setIsSolutionOpen] = useState(false); 
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   // Monaco Editor State
   const [language, setLanguage] = useState("python");
@@ -84,6 +90,10 @@ const ProblemSolvingPage = () => {
         const response = await axios.get(`${baseURL}/problem/${problemId}`, { headers });
         
         setProblemData(response.data);
+        if (response.data?.mySubmissions?.length > 0) {
+          setSubmissionResult(response.data.mySubmissions[0]);
+          setSelectedPreviousSubmissionId(response.data.mySubmissions[0].id);
+        }
       } catch (err) {
         console.error("Error fetching problem:", err);
         
@@ -112,6 +122,60 @@ const ProblemSolvingPage = () => {
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
     setCode(languageTemplates[lang]);
+  };
+
+  const handleGetHints = async () => {
+    if (!code.trim() || hintLoading) return;
+
+    const token = localStorage.getItem("accessToken");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    try {
+      setHintLoading(true);
+      setHintError('');
+
+      const contextPayload = [
+        `Problem Title: ${problemData?.title || ''}`,
+        `Problem Description: ${getCoreDescription(problemData?.description || '')}`,
+        `Constraints: ${(getCleanConstraints(problemData?.constraints || '') || []).join(' | ')}`,
+        `Sample Cases: ${(problemData?.examples || []).map((ex, idx) => `Case ${idx + 1} Input: ${ex?.input || ''} Output: ${ex?.output || ''}`).join(' | ')}`,
+        `Previous Verdict: ${submissionResult?.status || 'N/A'}`,
+        `Compiler/Runtime Error: ${submissionResult?.compileError || 'N/A'}`
+      ].join('\n');
+
+      const response = await axios.post(`${baseURL}/hints`, {
+        language,
+        code,
+        errors: contextPayload
+      }, { headers });
+      setHintResult(response.data);
+    } catch (err) {
+      setHintError(err?.response?.data?.message || 'Could not fetch hints right now.');
+    } finally {
+      setHintLoading(false);
+    }
+  };
+
+  const handlePlagiarismCheck = async () => {
+    if (!contestId || !code.trim() || plagiarismLoading) return;
+
+    const token = localStorage.getItem("accessToken");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    try {
+      setPlagiarismLoading(true);
+      setPlagiarismError('');
+      const response = await axios.post(`${baseURL}/plagiarism-check`, {
+        code,
+        language,
+        problemStatement: problemData?.description || ''
+      }, { headers });
+      setPlagiarismResult(response.data);
+    } catch (err) {
+      setPlagiarismError(err?.response?.data?.message || 'Could not run plagiarism analysis right now.');
+    } finally {
+      setPlagiarismLoading(false);
+    }
   };
 
   // --- SUBMISSION LOGIC ---
@@ -158,6 +222,10 @@ const ProblemSolvingPage = () => {
       }
 
       setSubmissionResult(finalResult);
+
+      if (contestId) {
+        handlePlagiarismCheck();
+      }
 
       // If AC verdict and in contest mode, trigger leaderboard refresh and polling
       if (finalResult?.status === 'AC' && contestId) {
@@ -251,15 +319,15 @@ const ProblemSolvingPage = () => {
               
               <button 
                 className="hover:text-slate-200 transition-colors"
-                onClick={() => setIsSolutionOpen(true)}
+                onClick={() => navigate('/submissions')}
               >
-                Solutions
+                Submissions
               </button>
               <button 
                 className="hover:text-slate-200 transition-colors"
-                onClick={() => navigate('/problemsolving/submissions')}
+                onClick={() => navigate(`/solutions/${problemId}`)}
               >
-                Submissions
+                Solutions
               </button>
             </div>
             <button className="flex items-center gap-1 text-[13px] font-semibold text-slate-400 hover:text-white transition-colors">
@@ -328,15 +396,23 @@ const ProblemSolvingPage = () => {
               </ul>
             </div>
 
-            <div 
-              onClick={() => setIsSolutionOpen(true)}
-              className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-purple-500/20 rounded-xl p-5 flex items-center justify-between group cursor-pointer hover:border-purple-500/40 transition-colors"
-            >
+            <div className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-cyan-500/20 rounded-xl p-5 flex items-center justify-between">
               <div>
-                <h4 className="text-white font-bold text-sm mb-1">Stuck? Check Discussion & Solutions</h4>
-                <p className="text-slate-400 text-xs">See how top rankers solved this problem with O(n) complexity.</p>
+                <h4 className="text-white font-bold text-sm mb-1">Need help? Use Gemini Hint</h4>
+                <p className="text-slate-400 text-xs">Use the AI Assistant panel below to get context-aware hints from the LLM.</p>
               </div>
-              <ChevronRight size={18} className="text-purple-400 group-hover:translate-x-1 transition-transform" />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsAssistantOpen(true);
+                  handleGetHints();
+                }}
+                className="text-xs font-bold px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white"
+              >
+                Hint
+              </button>
             </div>
 
           </div>
@@ -514,6 +590,56 @@ const ProblemSolvingPage = () => {
                         </pre>
                       </div>
                     )}
+
+                    {problemData?.mySubmissions?.length > 0 && (
+                      <div className="mt-5">
+                        <p className="text-[11px] font-bold text-slate-500 mb-2 tracking-wider uppercase">Previous Submissions</p>
+                        <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                          {problemData.mySubmissions.slice(0, 10).map((submission) => {
+                            const verdict = getVerdictInfo(submission.status);
+                            const isSelected = selectedPreviousSubmissionId === submission.id;
+
+                            return (
+                              <button
+                                key={submission.id}
+                                onClick={() => {
+                                  setSubmissionResult(submission);
+                                  setSelectedPreviousSubmissionId(submission.id);
+                                }}
+                                className={`w-full text-left px-3 py-2 rounded-lg border transition-colors ${
+                                  isSelected
+                                    ? 'border-cyan-500/40 bg-cyan-500/10'
+                                    : 'border-[#1a1f2e] bg-[#05070a] hover:bg-[#111624]'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className={`text-xs font-semibold ${verdict.color}`}>{verdict.text}</span>
+                                  <span className="text-[11px] text-slate-500 capitalize">{submission.language?.toLowerCase() || 'unknown'}</span>
+                                </div>
+                                <div className="mt-1 flex items-center gap-4 text-[11px] text-slate-400">
+                                  <span>{submission.timeMs ?? 0} ms</span>
+                                  <span>{submission.memoryKb ?? 0} KB</span>
+                                  <span className="truncate">{submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : '-'}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-5 rounded-xl border border-[#1a1f2e] bg-[#05070a] p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs text-slate-400">Need help with this code?</p>
+                        <button
+                          type="button"
+                          onClick={() => setIsAssistantOpen(true)}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white"
+                        >
+                          Open Hint Panel
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -521,16 +647,115 @@ const ProblemSolvingPage = () => {
 
           </div>
           
-          <button className="absolute bottom-[40px] right-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20 transition-all z-30">
-            <HelpCircle size={16} /> Help
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsAssistantOpen(true);
+            }}
+            disabled={hintLoading || !code.trim()}
+            className="absolute bottom-[40px] right-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20 transition-all z-30 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {hintLoading ? <Loader2 size={16} className="animate-spin" /> : <HelpCircle size={16} />} Hint
           </button>
+
+          {isAssistantOpen && (
+            <div className="fixed right-6 bottom-24 w-[420px] max-w-[calc(100vw-2rem)] max-h-[70vh] bg-[#0b0f19]/95 backdrop-blur-xl border border-[#2a3143] rounded-2xl shadow-2xl z-40 flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1f2e]">
+                <h4 className="text-sm font-bold text-white">AI Hint Assistant</h4>
+                <button
+                  type="button"
+                  onClick={() => setIsAssistantOpen(false)}
+                  className="text-slate-400 hover:text-white text-xs px-2 py-1"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="p-4 overflow-y-auto custom-scrollbar space-y-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleGetHints}
+                    disabled={hintLoading || !code.trim()}
+                    className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {hintLoading ? <Loader2 size={12} className="animate-spin" /> : <HelpCircle size={12} />}
+                    Hint
+                  </button>
+
+                  {contestId && (
+                    <button
+                      type="button"
+                      onClick={handlePlagiarismCheck}
+                      disabled={plagiarismLoading || !code.trim()}
+                      className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {plagiarismLoading ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+                      Plagiarism
+                    </button>
+                  )}
+                </div>
+
+                {hintError && <p className="text-xs text-red-400">{hintError}</p>}
+                {hintResult?.summary && (
+                  <div>
+                    <p className="text-[11px] font-bold text-cyan-400 tracking-wider uppercase mb-1">Hint Summary</p>
+                    <p className="text-xs text-slate-300 leading-relaxed">{hintResult.summary}</p>
+                  </div>
+                )}
+                {Array.isArray(hintResult?.hints) && hintResult.hints.length > 0 && (
+                  <ul className="space-y-1">
+                    {hintResult.hints.map((hint, idx) => (
+                      <li key={idx} className="text-xs text-slate-300">• {hint}</li>
+                    ))}
+                  </ul>
+                )}
+                {hintResult?.correctedSnippet && (
+                  <pre className="bg-[#05070a] border border-[#1a1f2e] text-xs text-slate-300 p-3 rounded-lg overflow-x-auto">
+                    {hintResult.correctedSnippet}
+                  </pre>
+                )}
+
+                {contestId && plagiarismError && (
+                  <p className="text-xs text-red-400">{plagiarismError}</p>
+                )}
+                {contestId && plagiarismResult && (
+                  <div className="border-t border-[#1a1f2e] pt-3">
+                    <p className="text-[11px] font-bold text-purple-400 tracking-wider uppercase mb-1">Contest Plagiarism Check</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                      <div className="bg-[#05070a] border border-[#1a1f2e] rounded-lg p-2">
+                        <span className="text-slate-500">Verdict</span>
+                        <p className="text-white font-semibold mt-0.5">{plagiarismResult.verdict}</p>
+                      </div>
+                      <div className="bg-[#05070a] border border-[#1a1f2e] rounded-lg p-2">
+                        <span className="text-slate-500">Originality</span>
+                        <p className="text-white font-semibold mt-0.5">{plagiarismResult.originalityScore}%</p>
+                      </div>
+                      <div className="bg-[#05070a] border border-[#1a1f2e] rounded-lg p-2">
+                        <span className="text-slate-500">AI Likelihood</span>
+                        <p className="text-white font-semibold mt-0.5">{plagiarismResult.aiLikelihood}%</p>
+                      </div>
+                      <div className="bg-[#05070a] border border-[#1a1f2e] rounded-lg p-2">
+                        <span className="text-slate-500">Indicators</span>
+                        <p className="text-white font-semibold mt-0.5">{Array.isArray(plagiarismResult.indicators) ? plagiarismResult.indicators.length : 0}</p>
+                      </div>
+                    </div>
+                    {plagiarismResult.explanation && (
+                      <p className="text-xs text-slate-300 mb-2">{plagiarismResult.explanation}</p>
+                    )}
+                    {plagiarismResult.recommendation && (
+                      <p className="text-xs text-slate-400">Recommendation: {plagiarismResult.recommendation}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
-
-      {/* --- MODAL MOUNT POINT --- */}
-      <SolutionModal isOpen={isSolutionOpen} onClose={() => setIsSolutionOpen(false)} />
-
       {/* --- FOOTER --- */}
       <footer className="h-[30px] flex items-center justify-between px-4 border-t border-[#1a1f2e] bg-[#0b0f19] text-[11px] font-medium text-slate-400 shrink-0 select-none z-10 relative">
         <div className="flex items-center gap-4">
