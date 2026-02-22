@@ -396,24 +396,26 @@ const ProblemSolvingPage = () => {
               </ul>
             </div>
 
-            <div className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-cyan-500/20 rounded-xl p-5 flex items-center justify-between">
-              <div>
-                <h4 className="text-white font-bold text-sm mb-1">Need help? Use Gemini Hint</h4>
-                <p className="text-slate-400 text-xs">Use the AI Assistant panel below to get context-aware hints from the LLM.</p>
+            {!contestId && (
+              <div className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-cyan-500/20 rounded-xl p-5 flex items-center justify-between">
+                <div>
+                  <h4 className="text-white font-bold text-sm mb-1">Need help? Use Gemini Hint</h4>
+                  <p className="text-slate-400 text-xs">Use the AI Assistant panel below to get context-aware hints from the LLM.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsAssistantOpen(true);
+                    handleGetHints();
+                  }}
+                  className="text-xs font-bold px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white"
+                >
+                  Hint
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsAssistantOpen(true);
-                  handleGetHints();
-                }}
-                className="text-xs font-bold px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white"
-              >
-                Hint
-              </button>
-            </div>
+            )}
 
           </div>
         </div>
@@ -628,18 +630,20 @@ const ProblemSolvingPage = () => {
                       </div>
                     )}
 
-                    <div className="mt-5 rounded-xl border border-[#1a1f2e] bg-[#05070a] p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-xs text-slate-400">Need help with this code?</p>
-                        <button
-                          type="button"
-                          onClick={() => setIsAssistantOpen(true)}
-                          className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white"
-                        >
-                          Open Hint Panel
-                        </button>
+                    {!contestId && (
+                      <div className="mt-5 rounded-xl border border-[#1a1f2e] bg-[#05070a] p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs text-slate-400">Need help with this code?</p>
+                          <button
+                            type="button"
+                            onClick={() => setIsAssistantOpen(true)}
+                            className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white"
+                          >
+                            Open Hint Panel
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -647,20 +651,22 @@ const ProblemSolvingPage = () => {
 
           </div>
           
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsAssistantOpen(true);
-            }}
-            disabled={hintLoading || !code.trim()}
-            className="absolute bottom-[40px] right-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20 transition-all z-30 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {hintLoading ? <Loader2 size={16} className="animate-spin" /> : <HelpCircle size={16} />} Hint
-          </button>
+          {!contestId && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsAssistantOpen(true);
+              }}
+              disabled={hintLoading || !code.trim()}
+              className="absolute bottom-[40px] right-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20 transition-all z-30 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {hintLoading ? <Loader2 size={16} className="animate-spin" /> : <HelpCircle size={16} />} Hint
+            </button>
+          )}
 
-          {isAssistantOpen && (
+          {!contestId && isAssistantOpen && (
             <div className="fixed right-6 bottom-24 w-[420px] max-w-[calc(100vw-2rem)] max-h-[70vh] bg-[#0b0f19]/95 backdrop-blur-xl border border-[#2a3143] rounded-2xl shadow-2xl z-40 flex flex-col overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1f2e]">
                 <h4 className="text-sm font-bold text-white">AI Hint Assistant</h4>
