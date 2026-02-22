@@ -26,6 +26,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shivsharan.backend.DTO.PlagiarismCheckRequest;
+import com.shivsharan.backend.DTO.PlagiarismCheckResponse;
 import com.shivsharan.backend.enums.CheckerType;
 import com.shivsharan.backend.enums.Language;
 import com.shivsharan.backend.enums.Verdict;
@@ -79,6 +81,9 @@ public class JudgeService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private GeminiPlagiarismService plagiarismService;
 
     @PostConstruct
     public void startSandbox() {
@@ -248,6 +253,34 @@ public class JudgeService {
         }
 
         List<TestCase> testCases = testCaseRepository.findByProblem_IdOrderByOrderingAsc(problem.getId());
+
+        // ── AUTO PLAGIARISM CHECK (before Docker execution) ──
+        try {
+            logger.info("Running automatic plagiarism check for submission: {}", submissionId);
+            PlagiarismCheckRequest plagReq = new PlagiarismCheckRequest(
+                    sub.getCode(),
+                    sub.getLanguage(),
+                    problem.getTitle() != null ? problem.getTitle() : ""
+            );
+            PlagiarismCheckResponse plagRes = plagiarismService.checkPlagiarism(plagReq);
+            sub.setPlagiarismVerdict(plagRes.getVerdict());
+            sub.setOriginalityScore(plagRes.getOriginalityScore());
+            sub.setAiLikelihood(plagRes.getAiLikelihood());
+            sub.setPlagiarismExplanation(plagRes.getExplanation());
+
+            // Apply penalty for AI-generated or plagiarised code
+            if ("LIKELY_AI_GENERATED".equals(plagRes.getVerdict())
+                    || "LIKELY_PLAGIARISED".equals(plagRes.getVerdict())) {
+                sub.setPlagiarismPenalty(true);
+                logger.warn("Plagiarism penalty applied for submission: {} — verdict: {}", submissionId, plagRes.getVerdict());
+            } else {
+                sub.setPlagiarismPenalty(false);
+            }
+            sub = submissionRepository.save(sub);
+        } catch (Exception plagEx) {
+            logger.error("Plagiarism check failed for submission {} — continuing with judging", submissionId, plagEx);
+            // Don't block judging if plagiarism check fails
+        }
 
         Path workDir = null;
         List<TestCaseResult> results = new ArrayList<>();

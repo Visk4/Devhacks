@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import Editor from "@monaco-editor/react";
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  Code2, Flame, Coins, Bell, Star, Clock, Database, CheckCircle2, 
-  ChevronDown, RotateCcw, Settings, Maximize, Play, CloudUpload, 
+import {
+  Code2, Flame, Coins, Bell, Star, Clock, Database, CheckCircle2,
+  ChevronDown, RotateCcw, Settings, Maximize, Play, CloudUpload,
   Terminal, ListTodo, HelpCircle, AlertCircle, AlertTriangle, ChevronRight,
-  Loader2, XCircle
+  Loader2, XCircle, ShieldAlert
 } from 'lucide-react';
 import SolutionModal from '../components/Practice/SolutionModal';
 
@@ -20,14 +20,14 @@ const languageTemplates = {
 
 // Map verdicts to user-friendly text and colors
 const getVerdictInfo = (status) => {
-  switch(status) {
+  switch (status) {
     case 'AC': return { text: 'Accepted', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: <CheckCircle2 size={18} /> };
     case 'WA': return { text: 'Wrong Answer', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: <XCircle size={18} /> };
     case 'TLE': return { text: 'Time Limit Exceeded', color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', icon: <Clock size={18} /> };
     case 'MLE': return { text: 'Memory Limit Exceeded', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', icon: <Database size={18} /> };
     case 'RE': return { text: 'Runtime Error', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: <AlertTriangle size={18} /> };
     case 'CE': return { text: 'Compile Error', color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20', icon: <Code2 size={18} /> };
-    case 'PENDING': 
+    case 'PENDING':
     case 'RUNNING': return { text: 'Judging...', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', icon: <Loader2 className="animate-spin" size={18} /> };
     case 'PENDING_MANUAL': return { text: 'Pending Manual Review', color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20', icon: <Clock size={18} /> };
     default: return { text: status || 'Error', color: 'text-slate-400', bg: 'bg-slate-800', border: 'border-slate-700', icon: <AlertCircle size={18} /> };
@@ -38,7 +38,7 @@ const ProblemSolvingPage = () => {
   const { problemId } = useParams();
   const [searchParams] = useSearchParams();
   const contestId = searchParams.get('contestId'); // Get contestId from URL
-  
+
   // Data States
   const [problemData, setProblemData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,11 +54,13 @@ const ProblemSolvingPage = () => {
   const pollingEnabledRef = useRef(false);
 
   // UI States
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('description');
-  const [activeTestCase, setActiveTestCase] = useState(0); 
+  const [activeTestCase, setActiveTestCase] = useState(0);
   const [consoleTab, setConsoleTab] = useState('testcases');
-  const [isSolutionOpen, setIsSolutionOpen] = useState(false); 
+  const [isSolutionOpen, setIsSolutionOpen] = useState(false);
+
+
 
   // Monaco Editor State
   const [language, setLanguage] = useState("python");
@@ -79,17 +81,17 @@ const ProblemSolvingPage = () => {
         setError("");
         const token = localStorage.getItem("accessToken");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        
+
         // Ensure this endpoint exactly matches your Spring Boot @GetMapping path
         const response = await axios.get(`${baseURL}/problem/${problemId}`, { headers });
-        
+
         setProblemData(response.data);
       } catch (err) {
         console.error("Error fetching problem:", err);
-        
+
         // 2. Enhanced Error Extraction
         let errorMessage = "Failed to load problem details. ";
-        
+
         if (err.response) {
           // Server responded with an error status (4xx, 5xx)
           errorMessage += `\nServer Error (${err.response.status}): ${err.response.data?.message || err.response.data?.error || 'No message provided by backend.'}`;
@@ -119,9 +121,9 @@ const ProblemSolvingPage = () => {
     if (!code.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
-    setConsoleTab('result'); 
-    setSubmissionResult({ status: 'PENDING' }); 
-    
+    setConsoleTab('result');
+    setSubmissionResult({ status: 'PENDING' });
+
     const token = localStorage.getItem("accessToken");
     const headers = { Authorization: `Bearer ${token}` };
 
@@ -144,11 +146,11 @@ const ProblemSolvingPage = () => {
       let finalResult = null;
 
       while (!isJudged) {
-        await new Promise(resolve => setTimeout(resolve, 1500)); 
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         const getResponse = await axios.get(`${baseURL}/submissions/${submissionId}`, { headers });
         const currentStatus = getResponse.data.status;
-        
+
         if (currentStatus !== 'PENDING' && currentStatus !== 'RUNNING') {
           isJudged = true;
           finalResult = getResponse.data;
@@ -163,10 +165,10 @@ const ProblemSolvingPage = () => {
       if (finalResult?.status === 'AC' && contestId) {
         console.log("✓ AC Verdict! Triggering leaderboard refresh...");
         setLeaderboardRefreshTrigger(prev => prev + 1);
-        
+
         // Enable polling to update leaderboard for all users
         pollingEnabledRef.current = true;
-        
+
         // Show success and redirect after 3 seconds
         setTimeout(() => {
           navigate(`/contest-arena?contestId=${contestId}`);
@@ -215,8 +217,8 @@ const ProblemSolvingPage = () => {
           <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
           <h3 className="text-xl font-bold mb-2 text-white">Access Denied</h3>
           <p className="text-sm whitespace-pre-wrap">{error || "Problem not found"}</p>
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="mt-6 px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-bold transition-all shadow-lg active:scale-95"
           >
             Go Back
@@ -232,30 +234,29 @@ const ProblemSolvingPage = () => {
 
       {/* --- MAIN WORKSPACE --- */}
       <div className="flex-1 flex overflow-hidden">
-        
+
         {/* LEFT PANEL: 40% WIDTH - Problem Details */}
         <div className="w-[40%] flex flex-col border-r border-[#1a1f2e] bg-[#0b0f19]">
-          
+
           <div className="h-[50px] flex items-center justify-between px-4 border-b border-[#1a1f2e] bg-[#0b0f19] shrink-0">
             <div className="flex items-center gap-4 text-[13px] font-semibold text-slate-400">
-              <button 
+              <button
                 className={`flex items-center gap-1.5 h-full ${activeTab === 'description' ? 'text-white' : 'hover:text-slate-200'}`}
                 onClick={() => setActiveTab('description')}
               >
-                <div className={`w-2 h-2 rounded-full ${
-                  problemData.difficulty === 'EASY' ? 'bg-emerald-500' : 
+                <div className={`w-2 h-2 rounded-full ${problemData.difficulty === 'EASY' ? 'bg-emerald-500' :
                   problemData.difficulty === 'MEDIUM' ? 'bg-yellow-500' : 'bg-pink-500'
-                }`}></div> 
+                  }`}></div>
                 {problemData.difficulty}
               </button>
-              
-              <button 
+
+              <button
                 className="hover:text-slate-200 transition-colors"
                 onClick={() => setIsSolutionOpen(true)}
               >
                 Solutions
               </button>
-              <button 
+              <button
                 className="hover:text-slate-200 transition-colors"
                 onClick={() => navigate('/problemsolving/submissions')}
               >
@@ -268,7 +269,7 @@ const ProblemSolvingPage = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-            
+
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-white mb-3 flex flex-wrap items-center gap-3">
                 {problemData.title}
@@ -305,11 +306,11 @@ const ProblemSolvingPage = () => {
                   <p className="text-[12px] font-bold text-slate-400 tracking-wider mb-2">EXAMPLE {ex.order || idx + 1}</p>
                   <div className="bg-[#111624] border border-[#1a1f2e] rounded-xl p-4 font-mono text-[13px] space-y-3">
                     <div>
-                      <span className="text-slate-500">Input:</span><br/>
+                      <span className="text-slate-500">Input:</span><br />
                       <span className="text-white">{ex.input}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500">Output:</span><br/>
+                      <span className="text-slate-500">Output:</span><br />
                       <span className="text-white">{ex.output}</span>
                     </div>
                   </div>
@@ -328,7 +329,7 @@ const ProblemSolvingPage = () => {
               </ul>
             </div>
 
-            <div 
+            <div
               onClick={() => setIsSolutionOpen(true)}
               className="bg-gradient-to-br from-[#17112c] to-[#0d121c] border border-purple-500/20 rounded-xl p-5 flex items-center justify-between group cursor-pointer hover:border-purple-500/40 transition-colors"
             >
@@ -344,10 +345,10 @@ const ProblemSolvingPage = () => {
 
         {/* RIGHT PANEL: 60% WIDTH - Editor & Console */}
         <div className="w-[60%] flex flex-col bg-[#05070a] relative">
-          
+
           <div className="h-[50px] flex items-center justify-between px-4 border-b border-[#1a1f2e] bg-[#0b0f19] shrink-0">
             <div className="flex items-center gap-3">
-              
+
               <div className="relative flex items-center">
                 <select
                   value={language}
@@ -362,7 +363,7 @@ const ProblemSolvingPage = () => {
               </div>
 
               <div className="w-[1px] h-4 bg-[#1a1f2e] mx-1"></div>
-              
+
               <button className="text-slate-400 hover:text-white transition-colors"><RotateCcw size={16} /></button>
               <button className="text-slate-400 hover:text-white transition-colors"><Settings size={16} /></button>
               <button className="text-slate-400 hover:text-white transition-colors"><Maximize size={16} /></button>
@@ -372,12 +373,12 @@ const ProblemSolvingPage = () => {
               <button className="flex items-center gap-1.5 bg-[#1e2536] hover:bg-[#2a3143] text-slate-200 text-[13px] font-bold px-4 py-1.5 rounded-lg transition-colors">
                 <Play size={14} className="text-emerald-400 fill-emerald-400" /> Run
               </button>
-              <button 
+              <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 text-white text-[13px] font-bold px-4 py-1.5 rounded-lg shadow-[0_0_10px_rgba(147,51,234,0.3)] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <CloudUpload size={14} />} 
+                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <CloudUpload size={14} />}
                 {isSubmitting ? 'Judging...' : 'Submit'}
               </button>
             </div>
@@ -413,13 +414,13 @@ const ProblemSolvingPage = () => {
           {/* Bottom Console Panel */}
           <div className="h-[250px] flex flex-col border-t border-[#1a1f2e] bg-[#0b0f19] shrink-0">
             <div className="flex items-center gap-6 px-4 border-b border-[#1a1f2e] bg-[#0b0f19]">
-              <button 
+              <button
                 className={`flex items-center gap-2 py-3 text-[13px] font-bold border-b-2 transition-colors ${consoleTab === 'testcases' ? 'text-cyan-400 border-cyan-400' : 'text-slate-400 border-transparent hover:text-slate-200'}`}
                 onClick={() => setConsoleTab('testcases')}
               >
                 <Terminal size={14} /> Test Cases
               </button>
-              <button 
+              <button
                 className={`flex items-center gap-2 py-3 text-[13px] font-bold border-b-2 transition-colors ${consoleTab === 'result' ? 'text-cyan-400 border-cyan-400' : 'text-slate-400 border-transparent hover:text-slate-200'}`}
                 onClick={() => setConsoleTab('result')}
               >
@@ -432,9 +433,9 @@ const ProblemSolvingPage = () => {
               <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
                 <div className="flex items-center gap-2 mb-4">
                   {problemData.examples.map((ex, idx) => (
-                    <button 
+                    <button
                       key={idx}
-                      onClick={() => setActiveTestCase(idx)} 
+                      onClick={() => setActiveTestCase(idx)}
                       className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${activeTestCase === idx ? 'bg-[#1e2536] text-white border border-[#2a3143]' : 'text-slate-400 hover:bg-[#111624]'}`}
                     >
                       Case {idx + 1}
@@ -445,8 +446,8 @@ const ProblemSolvingPage = () => {
                 <div className="space-y-4 max-w-2xl">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-500 tracking-wider mb-2">INPUT =</label>
-                    <textarea 
-                      value={problemData.examples[activeTestCase]?.input || ""} 
+                    <textarea
+                      value={problemData.examples[activeTestCase]?.input || ""}
                       readOnly
                       rows={2}
                       className="w-full bg-[#05070a] border border-[#1a1f2e] text-slate-300 font-mono text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-cyan-500/50 resize-none custom-scrollbar"
@@ -454,9 +455,9 @@ const ProblemSolvingPage = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-500 tracking-wider mb-2">EXPECTED OUTPUT =</label>
-                    <input 
-                      type="text" 
-                      value={problemData.examples[activeTestCase]?.output || ""} 
+                    <input
+                      type="text"
+                      value={problemData.examples[activeTestCase]?.output || ""}
                       readOnly
                       className="w-full bg-[#05070a] border border-[#1a1f2e] text-slate-300 font-mono text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-cyan-500/50"
                     />
@@ -514,13 +515,60 @@ const ProblemSolvingPage = () => {
                         </pre>
                       </div>
                     )}
+
+                    {/* Auto Plagiarism Result */}
+                    {submissionResult?.plagiarismVerdict && (
+                      <div className="mt-4 border-t border-[#1a1f2e] pt-4">
+                        <div className={`rounded-lg border p-4 space-y-3 ${submissionResult.plagiarismVerdict === 'LIKELY_ORIGINAL' ? 'bg-emerald-500/5 border-emerald-500/20' :
+                          submissionResult.plagiarismVerdict === 'SUSPICIOUS' ? 'bg-yellow-500/5 border-yellow-500/20' :
+                            'bg-red-500/5 border-red-500/20'
+                          }`}>
+                          <div className="flex items-center gap-2">
+                            <ShieldAlert size={14} className={submissionResult.plagiarismVerdict === 'LIKELY_ORIGINAL' ? 'text-emerald-400' : submissionResult.plagiarismVerdict === 'SUSPICIOUS' ? 'text-yellow-400' : 'text-red-400'} />
+                            <span className={`text-sm font-bold ${submissionResult.plagiarismVerdict === 'LIKELY_ORIGINAL' ? 'text-emerald-400' :
+                              submissionResult.plagiarismVerdict === 'SUSPICIOUS' ? 'text-yellow-400' : 'text-red-400'
+                              }`}>
+                              {submissionResult.plagiarismVerdict.replace(/_/g, ' ')}
+                            </span>
+                            {submissionResult.plagiarismPenalty && (
+                              <span className="ml-auto text-red-400 text-[10px] font-bold uppercase bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded">Penalty Applied</span>
+                            )}
+                          </div>
+
+                          {submissionResult.originalityScore != null && (
+                            <div className="flex gap-6 text-xs">
+                              <div>
+                                <span className="text-slate-500">Originality </span>
+                                <span className="text-slate-200 font-mono font-bold">{submissionResult.originalityScore}%</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500">AI Likelihood </span>
+                                <span className="text-slate-200 font-mono font-bold">{submissionResult.aiLikelihood}%</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {submissionResult.originalityScore != null && (
+                            <div className="w-full bg-slate-800 rounded-full h-2">
+                              <div className={`h-2 rounded-full transition-all ${submissionResult.originalityScore >= 70 ? 'bg-emerald-500' :
+                                submissionResult.originalityScore >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`} style={{ width: `${submissionResult.originalityScore}%` }} />
+                            </div>
+                          )}
+
+                          {submissionResult.plagiarismExplanation && (
+                            <p className="text-slate-400 text-xs leading-relaxed">{submissionResult.plagiarismExplanation}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
           </div>
-          
+
           <button className="absolute bottom-[40px] right-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20 transition-all z-30">
             <HelpCircle size={16} /> Help
           </button>
@@ -547,7 +595,8 @@ const ProblemSolvingPage = () => {
       </footer>
 
       {/* Custom Styles */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #05070a; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1a1f2e; border-radius: 4px; }
