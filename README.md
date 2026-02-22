@@ -1,27 +1,44 @@
-# ⚡ CodeStorm — Competitive Programming Arena
+<![CDATA[<div align="center">
 
-### *"Where Code Meets Competition"*
+# ⚡ CodeStorm
 
-**Team:** DevHacks | **Stack:** Spring Boot 4 + React 19 + Docker + Gemini AI
+### Competitive Programming Arena
+
+*Where Code Meets Competition*
+
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.3-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![Docker](https://img.shields.io/badge/Docker-Sandbox-2496ED?logo=docker&logoColor=white)](https://docker.com)
+[![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://mysql.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**A full-stack competitive programming platform with Docker-sandboxed code execution, real-time 1v1 battles, AI-powered plagiarism detection, and gamified learning — built for DevHacks 2026.**
+
+[Features](#-features) · [Architecture](#-system-architecture) · [Sandbox](#-docker-sandbox-secure-code-execution) · [AI Integration](#-gemini-ai-integration) · [API Reference](#-api-reference) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started)
+
+</div>
 
 ---
 
-## 🧭 SLIDE 1 — What is CodeStorm?
+## 🚀 Features
 
-CodeStorm is a **full-stack competitive programming platform** that combines:
-
-- 🏋️ **Practice Arena** — Solve problems with real-time judging
-- ⚔️ **1v1 Blitz Battles** — Real-time head-to-head coding duels via WebSocket
-- 🏆 **Contest System** — Create & join timed competitive contests with leaderboards
-- 🤖 **AI-Powered Features** — Gemini 2.5 Flash for hints, plagiarism detection & mock interviews
-- 🎮 **Gamified Learning** — Coins, XP, streaks, and debug-the-code game modes
-- 👥 **Community** — Discussion forum with posts, tags, and engagement
-
-> Think of it as **LeetCode + Codeforces + ChatGPT** — built from scratch in a hackathon.
+| Feature | Description |
+|---------|-------------|
+| **🏋️ Practice Arena** | Solve coding problems with real-time judging across C++, Java, and Python |
+| **⚔️ 1v1 Blitz Battles** | Real-time head-to-head coding duels via WebSocket with live opponent tracking |
+| **🏆 Contest System** | Create & join timed contests with live leaderboards and score tracking |
+| **🤖 AI Hints** | Progressive 3-level hint system powered by Gemini 2.5 Flash |
+| **🛡️ Auto Plagiarism Detection** | Every submission analyzed for AI-generation and copy-paste before execution |
+| **💼 Mock Interviews** | FAANG-style AI interview evaluation with hire/no-hire recommendations |
+| **🎮 Game Modes** | Blitz battles, Ctrl+Fix It (debug challenges), and competitive contests |
+| **👥 Community Forum** | Discussion posts with tags and engagement |
+| **🪙 Gamification** | Coins, XP, streaks, and profile stats |
+| **🔐 Dual Auth** | JWT + OAuth 2.0 (GitHub & Google) with email OTP verification |
 
 ---
 
-## 🏗️ SLIDE 2 — System Architecture Overview
+## 🏗️ System Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -71,42 +88,11 @@ CodeStorm is a **full-stack competitive programming platform** that combines:
 
 ---
 
-## 🔐 SLIDE 3 — Authentication & Security Layer
+## 🐳 Docker Sandbox: Secure Code Execution
 
-### Dual Authentication System
+Executing untrusted user code on a server is extremely dangerous — users could wipe the filesystem, fork-bomb the server, open network connections, or consume infinite resources. CodeStorm solves this with a **5-layer defense-in-depth isolation architecture**.
 
-| Feature | Details |
-|---------|---------|
-| **JWT Auth** | HS512-signed tokens, 1-hour access + 7-day refresh tokens |
-| **OAuth 2.0** | GitHub & Google social login with automatic account linking |
-| **OTP Verification** | Email-based OTP for signup verification via SMTP (Gmail) |
-| **CORS Policy** | Whitelisted origins only — `localhost:5173` in dev, configurable for prod |
-| **Role-Based Access** | Admin endpoints protected, user-scoped data access |
-
-### Security Flow:
-```
-User → Login (username/password) → Spring Security AuthManager
-     → Custom AuthProvider validates against BCrypt-hashed DB password
-     → JWT token pair generated (access + refresh)
-     → All subsequent requests: Authorization: Bearer <token>
-     → JwtAuthenticationFilter validates on every request
-     → SecurityContext populated → Controller access granted
-```
-
-**OAuth2 Flow:** GitHub/Google → Redirect → OAuth2LoginSuccessHandler → Auto-create user → Issue JWT → Redirect to frontend with token
-
----
-
-## 🐳 SLIDE 4 — Docker Sandbox: Secure Code Execution (CORE INNOVATION)
-
-### The Problem:
-Executing **untrusted user code** on a server is extremely dangerous. Users could:
-- Run `rm -rf /`, access the filesystem
-- Fork-bomb the server (`:(){ :|:& };:`)
-- Open network connections, mine crypto
-- Consume infinite memory/CPU
-
-### Our Solution: **5-Layer Isolation Architecture**
+### Layer Breakdown
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -145,28 +131,35 @@ Executing **untrusted user code** on a server is extremely dangerous. Users coul
 └──────────────────────────────────────────────────────────┘
 ```
 
-### Seccomp Profile Deep-Dive:
+### Seccomp Profile
+
+The seccomp profile uses a **default-KILL policy** — any system call not explicitly whitelisted will instantly terminate the process at the kernel level.
+
 ```json
 {
-  "defaultAction": "SCMP_ACT_KILL",    ← KILL process on ANY disallowed syscall
+  "defaultAction": "SCMP_ACT_KILL",
   "architectures": ["SCMP_ARCH_X86_64"],
   "syscalls": [
-    { "names": ["read","write","open","mmap","brk","execve","exit",...],
-      "action": "SCMP_ACT_ALLOW" },     ← Only ~50 safe operations permitted
-    { "names": ["kill","tkill"],
+    {
+      "names": ["read","write","open","mmap","brk","execve","exit","..."],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "names": ["kill","tkill"],
       "action": "SCMP_ACT_ALLOW",
-      "args": [{"index":0,"value":0,"op":"SCMP_CMP_EQ"}] } ← Can ONLY signal itself
+      "args": [{"index": 0, "value": 0, "op": "SCMP_CMP_EQ"}]
+    }
   ]
 }
 ```
 
-> **Key Talking Point:** "We use a defense-in-depth approach — even if one layer is bypassed, the others still protect the host system. The seccomp profile uses a default-KILL policy with an explicit whitelist of ~50 syscalls,making it impossible to open network sockets, mount filesystems, or perform privilege escalation."
+> Only ~50 safe operations are permitted. Network syscalls (`socket`, `connect`, `bind`) are completely absent — making it impossible to open any network connection from user code.
 
 ---
 
-## ⚖️ SLIDE 5 — Online Judge Engine
+## ⚖️ Online Judge Engine
 
-### Judging Pipeline:
+### Judging Pipeline
 
 ```
 Submit Code → Job Queue (Async) → Plagiarism Check (Gemini AI)
@@ -185,11 +178,6 @@ Submit Code → Job Queue (Async) → Plagiarism Check (Gemini AI)
                     python)          case with       /usr/bin/time,
                                      diff check)     memory via
                                                       cgroup.peak)
-                        │               │               │
-                        ▼               ▼               ▼
-                   CE → stop      Compare output    Record max
-                                  (exact / float     time & mem
-                                   tolerance)
                                         │
                                         ▼
                                   Save Verdict
@@ -198,78 +186,92 @@ Submit Code → Job Queue (Async) → Plagiarism Check (Gemini AI)
                                 ┌───────┴───────┐
                                 ▼               ▼
                         WebSocket Push    Battle Check
-                        (Real-time        (if 1v1 → update
-                         result to         battle state)
-                         client)
+                        (real-time         (if 1v1 →
+                         to client)         update state)
 ```
 
-### Supported Languages:
+### Supported Languages
+
 | Language | Compiler/Runtime | Compile Command | Run Command |
 |----------|------------------|-----------------|-------------|
 | **C++** | GCC/G++ | `g++ -O2 -std=c++17 -o solution solution.cpp` | `./solution` |
 | **Java** | OpenJDK 17 | `javac Solution.java` | `java -Xmx{mem}m Solution` |
 | **Python** | Python 3 | *(interpreted)* | `python3 solution.py` |
 
-### Checker Types:
-- **EXACT** — Byte-for-byte output match (trimmed)
-- **FLOAT_TOLERANCE** — Floating point comparison with epsilon
+### Verdict Types
 
-### Verdict Types:
-`AC` (Accepted) · `WA` (Wrong Answer) · `TLE` (Time Limit Exceeded) · `MLE` (Memory Limit Exceeded) · `RE` (Runtime Error) · `CE` (Compilation Error)
+| Verdict | Meaning |
+|---------|---------|
+| `AC` | Accepted — all test cases passed |
+| `WA` | Wrong Answer — output didn't match expected |
+| `TLE` | Time Limit Exceeded |
+| `MLE` | Memory Limit Exceeded |
+| `RE` | Runtime Error |
+| `CE` | Compilation Error |
+
+### Checker Modes
+- **EXACT** — Byte-for-byte output match (with whitespace trimming)
+- **FLOAT_TOLERANCE** — Floating point comparison with configurable epsilon
 
 ---
 
-## 🤖 SLIDE 6 — Gemini AI Integration (3 Services)
+## 🤖 Gemini AI Integration
 
-We use **Google Gemini 2.5 Flash** for three distinct AI-powered features:
+CodeStorm integrates **Google Gemini 2.5 Flash** across three distinct services:
 
-### 1. Smart Hints System (`GeminiHintService`)
+### 1. Smart Hints (`GeminiHintService`)
+
+Progressive hint system that never gives away the full solution:
+
+| Level | What It Provides |
+|-------|-----------------|
+| **Level 1** | Gentle conceptual nudge |
+| **Level 2** | Algorithm/approach suggestion |
+| **Level 3** | Pseudocode walkthrough |
+
+Gemini receives the problem statement, user's current code, and hint level — returning a contextual, pedagogically appropriate hint.
+
+### 2. Auto Plagiarism Detection (`GeminiPlagiarismService`)
+
+Runs automatically on **every submission before Docker execution**:
+
 ```
-User stuck on problem → Requests hint(level 1-3)
-  Level 1: Gentle conceptual nudge
-  Level 2: Algorithm/approach suggestion
-  Level 3: Pseudocode walkthrough
-
-Gemini receives: problem statement + user's current code + hint level
-Returns: Contextual, progressive hint (never gives full solution)
+Code Submitted
+      │
+      ▼
+  Gemini Analysis
+  ├── AI-generated patterns (ChatGPT/Copilot signatures, perfect comments, generic naming)
+  ├── Plagiarism indicators (tutorial copy-paste, style inconsistencies)
+  └── Human code signals (natural imperfections, personal style)
+      │
+      ▼
+  Returns: Verdict + Originality Score (0-100) + AI Likelihood (0-100)
+      │
+      ├── LIKELY_ORIGINAL → continue normally
+      ├── SUSPICIOUS → continue (flagged for review)
+      ├── LIKELY_AI_GENERATED → automatic penalty applied
+      └── LIKELY_PLAGIARISED → automatic penalty applied
 ```
 
-### 2. Auto Plagiarism Detection (`PlagiarismService`)
-```
-EVERY submission → Before Docker execution:
-  Gemini analyzes code for:
-    ✓ AI-generation patterns (ChatGPT/Copilot signatures)
-    ✓ Copy-paste from tutorials (style inconsistencies)
-    ✓ Originality indicators (human coding quirks)
-
-Returns: Verdict + Originality Score (0-100) + AI Likelihood (0-100)
-
-Verdicts: LIKELY_ORIGINAL | SUSPICIOUS | LIKELY_AI_GENERATED | LIKELY_PLAGIARISED
-
-If LIKELY_AI_GENERATED or LIKELY_PLAGIARISED → Automatic penalty applied
-```
-
-> **Key Detail:** Plagiarism check runs **before** Docker execution — this means we catch cheating before wasting compute resources on sandbox execution.
+> Plagiarism check runs **before** sandbox execution — catching cheating before wasting compute resources.
 
 ### 3. Mock Interview Evaluator (`GeminiInterviewService`)
-```
-User writes solution → Submits for interview evaluation
-Gemini acts as senior FAANG interviewer:
-  • Code quality assessment (1-10)
-  • Time/space complexity analysis
-  • Communication clarity score
-  • Edge case handling review
-  • Specific improvement suggestions
-  • Overall hire/no-hire recommendation
 
-Also: Generate interview-style questions from any problem
-```
+Gemini acts as a senior FAANG interviewer, evaluating:
+- Code quality assessment (1-10)
+- Time/space complexity analysis
+- Communication clarity score
+- Edge case handling review
+- Specific improvement suggestions
+- Overall hire/no-hire recommendation
+
+Also supports generating interview-style questions from any problem.
 
 ---
 
-## ⚔️ SLIDE 7 — 1v1 Blitz Battle System
+## ⚔️ 1v1 Blitz Battle System
 
-### Real-Time Architecture:
+Real-time competitive coding duels powered by WebSocket:
 
 ```
      Player 1                    Server                    Player 2
@@ -294,10 +296,10 @@ Also: Generate interview-style questions from any problem
         │        (Winner declared, stats shown)               │
 ```
 
-### Battle States: `WAITING` → `IN_PROGRESS` → `COMPLETED`
+**Battle States:** `WAITING` → `IN_PROGRESS` → `COMPLETED`
 
-### Key Features:
-- **WebSocket (STOMP over SockJS)** for real-time state sync
+**Key Features:**
+- **STOMP over SockJS** WebSocket for real-time bidirectional communication
 - **Polling fallback** — if WebSocket drops, client polls every 3 seconds
 - **Race condition safe** — synchronized verdict handling, first AC wins
 - **Random problem assignment** based on selected difficulty
@@ -305,9 +307,9 @@ Also: Generate interview-style questions from any problem
 
 ---
 
-## 🏆 SLIDE 8 — Contest System
+## 🏆 Contest System
 
-### Full Competitive Programming Contest Platform:
+Full competitive programming contest platform:
 
 | Feature | Description |
 |---------|-------------|
@@ -315,15 +317,12 @@ Also: Generate interview-style questions from any problem
 | **Registration** | Users register before start, tracked via ContestParticipant |
 | **Live Arena** | Dedicated contest page with problem list + submission panel |
 | **Real-Time Leaderboard** | Auto-calculated scores, sorted by problems solved + time |
-| **Multiple Problems** | Add/remove problems with individual point values |
 | **Score Tracking** | Per-problem AC tracking, total score aggregation |
-| **Contest Submissions** | Separate from practice — scoped to contest + time window |
+| **Contest Submissions** | Scoped to contest + time window, separate from practice |
 
-### Data Model:
 ```
 Contest ──┬── ContestProblem (many) ──── Problem
           └── ContestParticipant (many) ── User
-                   │
                    ├── score (total points)
                    ├── solvedProblemIds (JSON set)
                    └── lastAcceptedAt (tiebreaker)
@@ -331,38 +330,122 @@ Contest ──┬── ContestProblem (many) ──── Problem
 
 ---
 
-## 🎮 SLIDE 9 — Gamification & Game Modes
+## 🔐 Authentication & Security
 
-### Game Modes:
-1. **⚔️ 1v1 Blitz Battle** — Real-time head-to-head (see Slide 7)
-2. **🔧 Ctrl+Fix It** — Debug-the-code challenges (find & fix bugs)
-3. **🏆 Contest Arena** — Competitive timed contests
-4. **💼 Mock Interviews** — AI-powered FAANG-style evaluation
+| Feature | Details |
+|---------|---------|
+| **JWT Auth** | HS512-signed tokens, 1-hour access + 7-day refresh tokens |
+| **OAuth 2.0** | GitHub & Google social login with automatic account linking |
+| **OTP Verification** | Email-based OTP for signup verification via Gmail SMTP |
+| **CORS Policy** | Whitelisted origins, configurable per environment |
+| **Role-Based Access** | Admin endpoints protected, user-scoped data access |
 
-### Gamification Elements:
-- **🪙 Coins** — Earned by solving problems, winning battles
-- **⭐ XP System** — Level progression based on activity
-- **🔥 Streaks** — Daily solve streaks tracked on profile
-- **📊 Dashboard** — Activity graph, solve history, skill radar
-- **🏅 Profile Stats** — Total solved, acceptance rate, ranking
+```
+User → Login → Spring Security AuthManager → BCrypt validation
+     → JWT pair generated (access + refresh)
+     → All requests: Authorization: Bearer <token>
+     → JwtAuthenticationFilter validates per request
+     → SecurityContext populated → access granted
+```
 
 ---
 
-## 🖥️ SLIDE 10 — Frontend Architecture
+## 🗄️ Database Schema
 
-### Tech Stack:
-| Technology | Purpose |
-|-----------|---------|
-| **React 19** | UI framework with hooks & concurrent features |
-| **Vite 7.3** | Lightning-fast HMR dev server & optimized builds |
-| **TailwindCSS 4** | Utility-first styling with custom design tokens |
-| **Monaco Editor** | VS Code's editor engine — syntax highlighting, IntelliSense |
-| **Framer Motion** | Smooth animations and page transitions |
-| **Lucide React** | 575+ consistent icons |
-| **STOMP.js + SockJS** | WebSocket client for real-time features |
-| **Axios** | HTTP client with JWT interceptors |
+### Entity Relationship Overview
 
-### Pages (14 total):
+```
+Users ─────────┬──── Submissions ────── Problems
+               │          │                 │
+               │          │            TestCases
+               │          │
+               ├──── Battles (1v1)
+               │     (player1, player2, verdicts, winner)
+               │
+               ├──── ContestParticipant ──── Contest
+               │     (score, solved set)        │
+               │                          ContestProblem
+               ├──── CoinTransactions
+               └──── OTPs (email verification)
+
+Problems ─────┬──── Topics (many-to-many)
+              ├──── CompanyTags (many-to-many)
+              ├──── TestCases (ordered set)
+              └──── ProblemSolutions
+```
+
+### Key Entities (18 total)
+
+| Entity | Purpose | Key Fields |
+|--------|---------|-----------|
+| `User` | Platform users | username, email, bcrypt password, coins, xp, streak, avatar, role |
+| `Problem` | Coding challenges | title, body, difficulty, timeLimit, memoryLimit, checkerType |
+| `Submission` | Code submissions | code, language, verdict, timeMs, memoryKb, plagiarism fields |
+| `TestCase` | I/O test pairs | input, expectedOutput, ordering, isSample |
+| `Battle` | 1v1 matches | partyCode, player1/2, verdicts, status, winnerId |
+| `Contest` | Competitions | name, startTime, endTime, createdBy |
+| `ContestParticipant` | Contest entries | score, solvedProblemIds, lastAcceptedAt |
+| `CoinTransaction` | Currency ledger | amount, type, description, timestamp |
+
+**Database Features:** Flyway migrations · JPA/Hibernate · UUID primary keys · Optimistic locking
+
+---
+
+## 📡 API Reference
+
+### Auth & Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/signUp` | Register with OTP verification |
+| `POST` | `/api/login` | JWT token pair generation |
+| `POST` | `/api/refresh-token` | Token refresh |
+| `GET` | `/api/profile` | User profile with stats |
+| | | OAuth2: GitHub + Google login flows |
+
+### Problems & Judging
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/problems` | Browse problems (filtered by difficulty/topic) |
+| `GET` | `/api/problems/{id}/detail` | Full problem detail with test cases |
+| `POST` | `/api/submissions` | Submit code → async judging pipeline |
+| `GET` | `/api/submissions/{id}` | Poll submission result |
+
+### Battles
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/battle/create` | Create 1v1 room |
+| `POST` | `/api/battle/join` | Join via party code |
+| `GET` | `/api/battle/code/{code}` | Poll battle state |
+| | `/topic/battle/{id}` | WebSocket: real-time updates |
+
+### Contests
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET/POST/PUT/DELETE` | `/api/contests` | Full CRUD |
+| `POST` | `/api/contests/{id}/register` | Join contest |
+| `POST` | `/api/contests/{id}/submit` | Contest submission |
+| `GET` | `/api/contests/{id}/leaderboard` | Live rankings |
+
+### AI Services
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/hints` | Get progressive AI hints |
+| `POST` | `/api/plagiarism-check` | Manual plagiarism analysis |
+| `POST` | `/api/interview/evaluate` | Mock interview evaluation |
+| `POST` | `/api/interview/questions` | Generate interview questions |
+
+### WebSocket Channels
+| Channel | Description |
+|---------|-------------|
+| `/user/queue/submission-result` | Personal judging results |
+| `/topic/battle/{battleId}` | Battle state broadcasts |
+
+---
+
+## 🖥️ Frontend
+
+### Pages (14 total)
+
 | Page | Function |
 |------|----------|
 | `LandingPage` | Hero, features grid, leaderboard, CTA |
@@ -378,172 +461,33 @@ Contest ──┬── ContestProblem (many) ──── Problem
 | `ProfilePage` | User stats, solve history, achievements |
 | `CommunityPage` | Discussion forum with posts and interaction |
 
-### Key UI Feature: **Monaco Editor Integration**
+### Monaco Editor Integration
 - Full VS Code editing experience in-browser
-- Language-specific syntax highlighting (Python/C++/Java)
+- Language-specific syntax highlighting (Python, C++, Java)
 - Auto-indentation, bracket matching, minimap
 - Custom dark theme matching the platform aesthetic
 
 ---
 
-## 🗄️ SLIDE 11 — Database Schema
-
-### Entity Relationship Overview:
-
-```
-Users ─────────┬──── Submissions ────── Problems
-               │          │                 │
-               │          │            TestCases
-               │          │
-               ├──── Battles (1v1)
-               │     (player1, player2, verdicts, winner)
-               │
-               ├──── ContestParticipant ──── Contest
-               │     (score, solved set)        │
-               │                          ContestProblem
-               │
-               ├──── CoinTransactions
-               │
-               └──── OTPs (email verification)
-
-Problems ─────┬──── Topics (many-to-many)
-              ├──── CompanyTags (many-to-many)
-              ├──── TestCases (ordered set)
-              └──── ProblemSolutions
-```
-
-### Key Entities (18 total):
-| Entity | Purpose | Key Fields |
-|--------|---------|-----------|
-| `User` | Platform users | username, email, bcrypt password, coins, xp, streak, avatar, role |
-| `Problem` | Coding challenges | title, body, difficulty, timeLimit, memoryLimit, checkerType |
-| `Submission` | Code submissions | code, language, verdict, timeMs, memoryKb, plagiarism fields |
-| `TestCase` | I/O test pairs | input, expectedOutput, ordering, isSample |
-| `Battle` | 1v1 matches | partyCode, player1/2, verdicts, status, winnerId |
-| `Contest` | Competitions | name, startTime, endTime, createdBy |
-| `ContestParticipant` | Contest entries | score, solvedProblemIds, lastAcceptedAt |
-| `CoinTransaction` | Currency ledger | amount, type, description, timestamp |
-
-### Database Features:
-- **Flyway Migrations** — Version-controlled schema changes
-- **JPA/Hibernate** with `ddl-auto=update` for rapid development
-- **UUID primary keys** — Globally unique, non-sequential IDs
-- **Optimistic locking** — Race-safe concurrent submissions
-
----
-
-## 📡 SLIDE 12 — API Architecture
-
-### REST Endpoints (40+ endpoints):
-
-**Auth & Users:**
-- `POST /api/signUp` — Register with OTP verification
-- `POST /api/login` — JWT token pair generation
-- `POST /api/refresh-token` — Token refresh
-- `GET /api/profile` — User profile with stats
-- OAuth2: GitHub + Google login flows
-
-**Problems & Judging:**
-- `GET /api/problems` — Browse problems (filtered by difficulty/topic)
-- `GET /api/problems/{id}/detail` — Full problem detail with test cases
-- `POST /api/submissions` — Submit code → async judging pipeline
-- `GET /api/submissions/{id}` — Poll submission result
-
-**Battles:**
-- `POST /api/battle/create` — Create 1v1 room
-- `POST /api/battle/join` — Join via party code
-- `GET /api/battle/code/{code}` — Poll battle state
-- WebSocket `/topic/battle/{id}` — Real-time updates
-
-**Contests:**
-- Full CRUD: `GET/POST/PUT/DELETE /api/contests`
-- `POST /api/contests/{id}/register` — Join contest
-- `POST /api/contests/{id}/submit` — Contest submission
-- `GET /api/contests/{id}/leaderboard` — Live rankings
-
-**AI Services:**
-- `POST /api/hints` — Get progressive AI hints
-- `POST /api/plagiarism-check` — Manual plagiarism analysis
-- `POST /api/interview/evaluate` — Mock interview evaluation
-- `POST /api/interview/questions` — Generate interview questions
-
-**WebSocket Channels:**
-- `/user/queue/submission-result` — Personal judging results
-- `/topic/battle/{battleId}` — Battle state broadcasts
-
----
-
-## 📊 SLIDE 13 — How Plagiarism Detection Works
-
-### Automatic Pipeline (every submission):
-
-```
-Code Submitted
-      │
-      ▼
-┌─────────────────────────────┐
-│  Gemini 2.5 Flash Analysis  │
-│                             │
-│  Checks for:                │
-│  • AI-generated patterns    │
-│    - Perfect comments       │
-│    - Textbook structure     │
-│    - Generic naming         │
-│    - LLM boilerplate        │
-│                             │
-│  • Plagiarism indicators    │
-│    - Tutorial copy-paste    │
-│    - Style inconsistencies  │
-│    - Context mismatches     │
-│                             │
-│  • Human code signals       │
-│    - Natural imperfections  │
-│    - Personal style         │
-│    - Incremental approach   │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│  Returns:                    │
-│  • Verdict (4 categories)    │
-│  • Originality Score (0-100) │
-│  • AI Likelihood (0-100)     │
-│  • Detailed indicators       │
-│  • Explanation               │
-└──────────────┬───────────────┘
-               │
-        ┌──────┴──────┐
-        │             │
-   ORIGINAL      AI/PLAGIARISED
-   (continue)     (penalty flag)
-        │             │
-        ▼             ▼
-  Docker Judge    Docker Judge
-  (normal)        (runs but flagged)
-```
-
-> **Result shown to user:** Originality score, AI likelihood bar, verdict badge, and "PENALTY APPLIED" tag if flagged.
-
----
-
-## ⚡ SLIDE 14 — Performance & Scalability
+## ⚡ Performance & Scalability
 
 | Aspect | Implementation |
 |--------|---------------|
-| **Async Judging** | Submissions queued via `JobQueueService` — non-blocking API response |
+| **Async Judging** | Submissions queued via `JobQueueService` — non-blocking API |
 | **Connection Pooling** | HikariCP: 20 max connections, 5 minimum idle |
 | **Persistent Sandbox** | Single long-running Docker container — no cold-start per submission |
-| **Per-Submission Isolation** | Unique Linux user + cgroup per run — cleaned up after execution |
+| **Per-Submission Isolation** | Unique Linux user + cgroup per run, cleaned up after execution |
 | **WebSocket Scaling** | STOMP message broker with topic/queue separation |
 | **Database Indexing** | UUID PKs, indexed foreign keys, JPQL optimized queries |
 | **Frontend Optimization** | Vite 7 tree-shaking, lazy loading, code splitting |
-| **Resource Management** | cgroup memory.peak tracking, /usr/bin/time for CPU profiling |
+| **Resource Management** | cgroup `memory.peak` tracking, `/usr/bin/time` for CPU profiling |
 
 ---
 
-## 🛡️ SLIDE 15 — Tech Stack Summary
+## 🛡️ Tech Stack
 
-### Backend:
+### Backend
+
 | Component | Technology | Version |
 |-----------|-----------|---------|
 | Framework | Spring Boot | 4.0.3 |
@@ -557,7 +501,8 @@ Code Submitted
 | Email | Spring Mail (Gmail SMTP) | 4.0.3 |
 | Build | Maven | 3.x |
 
-### Frontend:
+### Frontend
+
 | Component | Technology | Version |
 |-----------|-----------|---------|
 | Framework | React | 19.2 |
@@ -565,33 +510,54 @@ Code Submitted
 | Styling | TailwindCSS | 4.2 |
 | Editor | Monaco Editor | 4.7 |
 | Animations | Framer Motion | 12.34 |
-| Icons | Lucide React | 575 icons |
+| Icons | Lucide React | 575+ |
 | WebSocket | STOMP.js + SockJS | 7.3 |
 | HTTP | Axios | 1.13 |
 | Routing | React Router | 7.13 |
 
 ---
 
-## 🎤 TALKING POINTS FOR Q&A
+## 🚀 Getting Started
 
-### "How do you provide isolation in Docker?"
-> "We use a **defense-in-depth approach with 5 layers**. First, the Docker container itself provides filesystem and network namespace isolation. Second, we apply a custom **seccomp profile** with a default-KILL policy that only whitelists ~50 safe system calls — this blocks network access, filesystem mounting, and privilege escalation at the kernel level. Third, we use **cgroups v2** for hard memory/CPU limits per submission — if a process exceeds memory, it's instantly OOM-killed with no swap allowed. Fourth, each submission runs under a **unique ephemeral Linux user** with strict ulimits — max 256 processes (prevents fork bombs), 10MB file output limit, 64 file descriptors. Fifth, everything is **time-bounded** with a kill-after timeout. After execution, the cgroup is destroyed, the user is deleted, and the working directory is cleaned up."
+### Prerequisites
+- Java 17+
+- Node.js 18+
+- MySQL 8.0
+- Docker Desktop
 
-### "How does the plagiarism detection work?"
-> "Every submission goes through our **Gemini 2.5 Flash AI analysis pipeline before Docker execution**. The AI evaluates the code against multiple heuristic categories — AI-generated patterns like overly perfect comments, textbook-perfect structure, and generic naming conventions; plagiarism indicators like tutorial copy-paste and style inconsistencies; and human code signals like natural imperfections and personal style. It returns an originality score (0-100) and AI likelihood score (0-100). If the code is flagged as LIKELY_AI_GENERATED or LIKELY_PLAGIARISED, an automatic penalty is applied to the submission. This runs before sandbox execution so we're not wasting compute on cheated submissions."
+### Backend Setup
+```bash
+cd backend
 
-### "How does the 1v1 battle work in real-time?"
-> "We use **STOMP over SockJS WebSocket** for real-time bidirectional communication. When a battle is created, a party code is generated. When the opponent joins, the server broadcasts a BATTLE_STARTED event over the WebSocket topic `/topic/battle/{id}`. Both players see the same problem and can code simultaneously. When either player submits, the judge processes it and the verdict is both sent directly to the submitter and broadcast to the opponent via WebSocket. We also have a **polling fallback** — if WebSocket disconnects, the client polls the battle state every 3 seconds. The battle service has **race-condition guards** for concurrent AC submissions — the first to get Accepted wins."
+# Build the Docker sandbox image
+cd sandbox && ./build-sandbox.ps1 && cd ..
 
-### "What's your database design strategy?"
-> "We use **MySQL with JPA/Hibernate** and **Flyway for version-controlled migrations**. All entities use **UUID primary keys** for global uniqueness. The schema has about 18 entities covering users, problems, test cases, submissions, contests, battles, and gamification. We use **composite keys** for contest participants (userId + contestId), **JSON columns** for flexible data like solved problem sets, and **Lob annotations** for large text like submitted code and compile errors. Foreign keys maintain referential integrity across the model."
+# Configure database
+# Edit src/main/resources/application.properties with your MySQL credentials
 
-### "Why Spring Boot 4?"
-> "Spring Boot 4 gives us the latest Spring Framework 7 features, including Jakarta EE 11 namespace, improved AOT compilation support, and enhanced observability. It also has better WebSocket integration and improved startup time. Combined with Java 17's records, sealed classes, and pattern matching, it gives us a modern, type-safe backend."
+# Run
+./mvnw spring-boot:run
+```
+
+### Frontend Setup
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create .env file
+echo "VITE_BASE_URL=http://localhost:8080/api" > .env
+
+# Run
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173` and the backend at `http://localhost:8080`.
 
 ---
 
-## 📈 SLIDE 16 — Future Roadmap (Bonus)
+## 📈 Future Roadmap
 
 - **AI Code Reviews** — Gemini-powered line-by-line code review feedback
 - **Team Battles** — 2v2 and 3v3 team competitive modes
@@ -602,4 +568,9 @@ Code Submitted
 
 ---
 
+<div align="center">
+
 *Built with ❤️ for DevHacks 2026*
+
+</div>
+]]>
