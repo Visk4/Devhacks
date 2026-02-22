@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 # ⚡ CodeStorm
 
@@ -34,26 +34,22 @@ Built for **DevHacks 2026**.
 
 ## 🚀 Features
 
-<table>
-<tr><td>🏋️ <b>Practice Arena</b></td><td>Solve coding problems with real-time judging across C++, Java, and Python</td></tr>
-<tr><td>⚔️ <b>1v1 Blitz Battles</b></td><td>Real-time head-to-head coding duels via WebSocket with live opponent tracking</td></tr>
-<tr><td>🏆 <b>Contest System</b></td><td>Create & join timed contests with live leaderboards and score tracking</td></tr>
-<tr><td>🤖 <b>AI Hints</b></td><td>Progressive 3-level hint system powered by Gemini 2.5 Flash</td></tr>
-<tr><td>🛡️ <b>Auto Plagiarism Detection</b></td><td>Every submission analyzed for AI-generation and copy-paste before execution</td></tr>
-<tr><td>💼 <b>Mock Interviews</b></td><td>FAANG-style AI interview evaluation with hire/no-hire recommendations</td></tr>
-<tr><td>🎮 <b>Game Modes</b></td><td>Blitz battles, Ctrl+Fix It (debug challenges), and competitive contests</td></tr>
-<tr><td>👥 <b>Community Forum</b></td><td>Discussion posts with tags and engagement</td></tr>
-<tr><td>🪙 <b>Gamification</b></td><td>Coins, XP, streaks, and profile stats</td></tr>
-<tr><td>🔐 <b>Dual Auth</b></td><td>JWT + OAuth 2.0 (GitHub & Google) with email OTP verification</td></tr>
-</table>
+| | Feature | Description |
+|---|---------|-------------|
+| 🏋️ | **Practice Arena** | Solve coding problems with real-time judging across C++, Java, and Python |
+| ⚔️ | **1v1 Blitz Battles** | Real-time head-to-head coding duels via WebSocket with live opponent tracking |
+| 🏆 | **Contest System** | Create & join timed contests with live leaderboards and score tracking |
+| 🤖 | **AI Hints** | Progressive 3-level hint system powered by Gemini 2.5 Flash |
+| 🛡️ | **Auto Plagiarism Detection** | Every submission analyzed for AI-generation and copy-paste before execution |
+| 💼 | **Mock Interviews** | FAANG-style AI interview evaluation with hire/no-hire recommendations |
+| 🎮 | **Game Modes** | Blitz battles, Ctrl+Fix It (debug challenges), and competitive contests |
+| 👥 | **Community Forum** | Discussion posts with tags and engagement |
+| 🪙 | **Gamification** | Coins, XP, streaks, and profile stats |
+| 🔐 | **Dual Auth** | JWT + OAuth 2.0 (GitHub & Google) with email OTP verification |
 
 ---
 
 ## 🏗️ System Architecture
-
-<details>
-<summary><b>Click to expand full architecture diagram</b></summary>
-<br>
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -101,8 +97,6 @@ Built for **DevHacks 2026**.
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-</details>
-
 ---
 
 ## 🐳 Docker Sandbox: Secure Code Execution
@@ -111,10 +105,6 @@ Built for **DevHacks 2026**.
 > Executing untrusted user code on a server is extremely dangerous — users could wipe the filesystem, fork-bomb the server, open network connections, or consume infinite resources.
 
 CodeStorm solves this with a **5-layer defense-in-depth isolation architecture**:
-
-<details>
-<summary><b>🔒 View 5-Layer Security Breakdown</b></summary>
-<br>
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -153,8 +143,6 @@ CodeStorm solves this with a **5-layer defense-in-depth isolation architecture**
 └──────────────────────────────────────────────────────────┘
 ```
 
-</details>
-
 ### Seccomp Profile
 
 The seccomp profile uses a **default-KILL policy** — any system call not explicitly whitelisted will instantly terminate the process at the kernel level.
@@ -186,10 +174,6 @@ The seccomp profile uses a **default-KILL policy** — any system call not expli
 
 ### Judging Pipeline
 
-<details>
-<summary><b>View complete judging flow</b></summary>
-<br>
-
 ```
 Submit Code → Job Queue (Async) → Plagiarism Check (Gemini AI)
                                         │
@@ -218,8 +202,6 @@ Submit Code → Job Queue (Async) → Plagiarism Check (Gemini AI)
                         (real-time         (if 1v1 →
                          to client)         update state)
 ```
-
-</details>
 
 ### Supported Languages
 
@@ -305,10 +287,6 @@ Also supports generating interview-style questions from any problem.
 
 Real-time competitive coding duels powered by WebSocket.
 
-<details>
-<summary><b>View WebSocket battle sequence diagram</b></summary>
-<br>
-
 ```
      Player 1                    Server                    Player 2
         │                          │                          │
@@ -331,8 +309,6 @@ Real-time competitive coding duels powered by WebSocket.
         │◀── WebSocket: BATTLE_COMPLETED ───────────────────▶│
         │        (Winner declared, stats shown)               │
 ```
-
-</details>
 
 **Battle States:** `WAITING` → `IN_PROGRESS` → `COMPLETED`
 
@@ -653,4 +629,3 @@ The frontend will be available at `http://localhost:5173` and the backend at `ht
 
 <br>
 </div>
-]]>
