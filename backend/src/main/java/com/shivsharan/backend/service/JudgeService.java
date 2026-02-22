@@ -68,6 +68,9 @@ public class JudgeService {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private BattleService battleService;
+
     // Self-injection to allow @Transactional to work on internal calls
     @Autowired
     @org.springframework.context.annotation.Lazy
@@ -360,6 +363,14 @@ public class JudgeService {
         } finally {
             cleanupSubmission(username);
             notificationService.notifyUser(sub);
+
+            // Check if this submission is part of a 1v1 battle
+            try {
+                battleService.onSubmissionJudged(sub);
+            } catch (Exception ex) {
+                logger.debug("Battle check skipped: {}", ex.getMessage());
+            }
+
             if (workDir != null) {
                 try {
                     FileUtils.deleteDirectory(workDir.toFile());

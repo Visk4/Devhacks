@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import {
-  Code2, Mic, MicOff, Video as VideoIcon, VideoOff,
-  Bot, Volume2, RotateCcw, X, CheckCircle2,
+  Mic, MicOff, Video as VideoIcon, VideoOff,
+  Bot, Volume2, RotateCcw, CheckCircle2,
   AlertCircle, Loader2
 } from 'lucide-react';
 
-// --- FALLBACK QUESTIONS (used if API fails or before generation) ---
+// --- FALLBACK QUESTIONS ---
 const fallbackQuestions = [
   {
     id: 1,
     difficulty: "Medium",
-    text: "Tell me about your experience with Frontend Developer development. What technologies have you worked with and what challenges have you faced?",
+    text: "Tell me about your experience with Frontend development. What technologies have you worked with and what challenges have you faced?",
     topics: ["technical knowledge", "problem solving", "experience"]
   },
   {
@@ -22,13 +22,13 @@ const fallbackQuestions = [
   }
 ];
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_BASE_URL || "http://localhost:8080/api";
 
 const MockInterviewPage = () => {
   // --- STATES ---
   const [questions, setQuestions] = useState(fallbackQuestions);
   const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [interviewState, setInterviewState] = useState('setup'); // 'setup', 'answering', 'evaluating', 'feedback'
+  const [interviewState, setInterviewState] = useState('setup');
   const [transcript, setTranscript] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -52,154 +52,152 @@ const MockInterviewPage = () => {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const recognitionRef = useRef(null);
-  const synthRef = useRef(window.speechSynthesis);
+  const synthRef = useRef(typeof window !== 'undefined' ? window.speechSynthesis : null);
+  const isRecordingRef = useRef(false);
+  const isMicOnRef = useRef(true);
+  const transcriptRef = useRef("");
 
-  const currentQuestion = questions[currentQIndex];
+  // Keep refs in sync
+  useEffect(() => { isRecordingRef.current = isRecording; }, [isRecording]);
+  useEffect(() => { isMicOnRef.current = isMicOn; }, [isMicOn]);
+  useEffect(() => { transcriptRef.current = transcript; }, [transcript]);
 
-  // --- 1. WEBCAM INITIALIZATION ---
+  const currentQuestion = questions[currentQIndex] || fallbackQuestions[0];
+
+  // --- 1. WEBCAM (init once, toggle tracks) ---
   useEffect(() => {
-    const startCamera = async () => {
+    let mounted = true;
+    const initCamera = async () => {
       try {
-        if (isCameraOn) {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-          streamRef.current = stream;
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        } else {
-          stopCamera();
-        }
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        if (!mounted) { stream.getTracks().forEach(t => t.stop()); return; }
+        streamRef.current = stream;
+        if (videoRef.current) videoRef.current.srcObject = stream;
       } catch (err) {
-        console.error("Error accessing camera:", err);
-        setIsCameraOn(false);
+        console.error("Camera init error:", err);
+        if (mounted) setIsCameraOn(false);
       }
     };
-    startCamera();
-    return () => stopCamera();
+    initCamera();
+    return () => {
+      mounted = false;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
+
+  // Toggle video track on/off without re-requesting permissions
+  useEffect(() => {
+    if (streamRef.current) {
+      streamRef.current.getVideoTracks().forEach(t => { t.enabled = isCameraOn; });
+    }
   }, [isCameraOn]);
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-  };
-
-  // --- 2. TEXT-TO-SPEECH (AI ASKING QUESTION) ---
-  const speakQuestion = (text) => {
-    if (!synthRef.current) return;
-
-    synthRef.current.cancel(); // Stop any current speech
+  // --- 2. TEXT-TO-SPEECH ---
+  const speakQuestion = useCallback((text) => {
+    const synth = synthRef.current;
+    if (!synth) return;
+    synth.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95; // Slightly slower for clarity
+    utterance.rate = 0.95;
     utterance.pitch = 1;
-
-    // Optional: Try to find a good English voice
-    const voices = synthRef.current.getVoices();
-    const preferredVoice = voices.find(voice => voice.lang.includes('en-US') && voice.name.includes('Google')) || voices[0];
-    if (preferredVoice) utterance.voice = preferredVoice;
+    const voices = synth.getVoices();
+    const preferred = voices.find(v => v.lang.includes('en-US') && v.name.includes('Google')) || voices[0];
+    if (preferred) utterance.voice = preferred;
 
     utterance.onstart = () => setIsAiSpeaking(true);
     utterance.onend = () => setIsAiSpeaking(false);
     utterance.onerror = () => setIsAiSpeaking(false);
 
-    synthRef.current.speak(utterance);
-  };
+    synth.speak(utterance);
+  }, []);
 
-  // Read question aloud when it changes (Browser autoplay policies might block the very first one without user interaction)
   useEffect(() => {
-    if (interviewState === 'answering') {
+    if (interviewState === 'answering' && currentQuestion) {
       speakQuestion(currentQuestion.text);
     } else {
       synthRef.current?.cancel();
+      setIsAiSpeaking(false);
     }
-  }, [currentQIndex, interviewState]);
+  }, [currentQIndex, interviewState, speakQuestion, currentQuestion]);
 
-
-  // --- 3. SPEECH-TO-TEXT (USER ANSWERING) ---
+  // --- 3. SPEECH-TO-TEXT (init ONCE) ---
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true; // Allows real-time text updates
-      recognitionRef.current.lang = 'en-US';
-
-      recognitionRef.current.onresult = (event) => {
-        let currentInterim = '';
-        let currentFinal = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            currentFinal += event.results[i][0].transcript + ' ';
-          } else {
-            currentInterim += event.results[i][0].transcript;
-          }
-        }
-
-        // Append final sentences to the main transcript state
-        if (currentFinal) {
-          setTranscript(prev => prev + currentFinal);
-        }
-        // Store interim words so they show up as the user speaks, but disappear when final is appended
-        setInterimTranscript(currentInterim);
-      };
-
-      recognitionRef.current.onerror = (event) => {
-        console.error("Speech recognition error", event.error);
-        if (event.error !== 'no-speech') setIsRecording(false);
-      };
-
-      recognitionRef.current.onend = () => {
-        // Auto-restart if we are supposed to be recording (handles silent pauses)
-        if (isRecording && isMicOn) {
-          recognitionRef.current.start();
-        } else {
-          setIsRecording(false);
-          setInterimTranscript('');
-        }
-      };
-    } else {
-      console.warn("Speech Recognition API not supported in this browser.");
-    }
-
-    return () => {
-      if (recognitionRef.current) recognitionRef.current.stop();
-    };
-  }, [isRecording, isMicOn]);
-
-  const toggleRecording = () => {
-    if (!isMicOn) {
-      alert("Please unmute your microphone first.");
+    if (!SpeechRecognition) {
+      console.warn("Speech Recognition API not supported.");
       return;
     }
 
-    if (isRecording) {
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      let finalBatch = '';
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalBatch += event.results[i][0].transcript + ' ';
+        } else {
+          interim += event.results[i][0].transcript;
+        }
+      }
+      if (finalBatch) {
+        setTranscript(prev => prev + finalBatch);
+      }
+      setInterimTranscript(interim);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        setIsRecording(false);
+      }
+    };
+
+    recognition.onend = () => {
+      // Auto-restart only if still supposed to be recording
+      if (isRecordingRef.current && isMicOnRef.current) {
+        try { recognition.start(); } catch (e) { /* already started */ }
+      } else {
+        setIsRecording(false);
+        setInterimTranscript('');
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      try { recognition.stop(); } catch (e) { /* noop */ }
+    };
+  }, []); // Init ONCE — uses refs for current state
+
+  const toggleRecording = useCallback(() => {
+    if (!isMicOnRef.current) {
+      alert("Please unmute your microphone first.");
+      return;
+    }
+    if (isRecordingRef.current) {
       setIsRecording(false);
-      recognitionRef.current?.stop();
+      try { recognitionRef.current?.stop(); } catch (e) { /* noop */ }
       setInterimTranscript('');
     } else {
       setIsRecording(true);
-      synthRef.current?.cancel(); // Stop AI if it's talking while user starts recording
+      synthRef.current?.cancel();
       setIsAiSpeaking(false);
-      try {
-        recognitionRef.current?.start();
-      } catch (e) {
-        console.error(e);
-      }
+      try { recognitionRef.current?.start(); } catch (e) { console.error(e); }
     }
-  };
+  }, []);
 
   // --- TIMER ---
   useEffect(() => {
-    let interval;
-    if (interviewState === 'answering') {
-      interval = setInterval(() => {
-        setTimeElapsed(prev => prev + 1);
-      }, 1000);
-    }
+    if (interviewState !== 'answering') return;
+    const interval = setInterval(() => setTimeElapsed(prev => prev + 1), 1000);
     return () => clearInterval(interval);
   }, [interviewState]);
 
@@ -209,27 +207,27 @@ const MockInterviewPage = () => {
     return `${m}:${s}`;
   };
 
-  // --- HANDLERS ---
+  // --- AUTH ---
   const getAuthHeaders = () => {
     const token = localStorage.getItem("accessToken");
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
+  // --- HANDLERS ---
   const handleStartInterview = async () => {
     setIsLoadingQuestions(true);
     try {
-      const response = await axios.post(`${API_BASE}/api/interview/questions`, {
+      const response = await axios.post(`${API_BASE}/interview/questions`, {
         role,
         count: questionCount,
         difficulty: difficultyPref
       }, { headers: getAuthHeaders() });
 
-      if (response.data.questions && response.data.questions.length > 0) {
+      if (response.data.questions?.length > 0) {
         setQuestions(response.data.questions);
       }
     } catch (err) {
       console.error("Failed to generate questions, using fallback:", err);
-      // fallbackQuestions are already set
     } finally {
       setIsLoadingQuestions(false);
       setCurrentQIndex(0);
@@ -243,13 +241,42 @@ const MockInterviewPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (isRecording) toggleRecording();
+    // Stop recording first, then wait for final transcript to settle
+    if (isRecordingRef.current) {
+      setIsRecording(false);
+      try { recognitionRef.current?.stop(); } catch (e) { /* noop */ }
+    }
+    synthRef.current?.cancel();
+    setIsAiSpeaking(false);
+
+    // Small delay to let the last speech recognition results finalize
+    await new Promise(resolve => setTimeout(resolve, 400));
+
     setInterviewState('evaluating');
 
-    const currentAnswer = transcript + interimTranscript;
+    // Read the latest transcript from ref (state may not have flushed yet)
+    const currentAnswer = (transcriptRef.current + interimTranscript).trim();
+    setInterimTranscript('');
+
+    if (currentAnswer.length < 5) {
+      setEvaluation({
+        overall: 0,
+        metrics: [
+          { label: "Technical", score: 0 },
+          { label: "Communication", score: 0 },
+          { label: "Depth", score: 0 },
+          { label: "Relevance", score: 0 }
+        ],
+        strengths: "No answer provided",
+        improvements: "Please provide a substantive answer to get meaningful feedback",
+        detailedFeedback: "Your answer was too short to evaluate. Try to speak for at least 30 seconds."
+      });
+      setInterviewState('feedback');
+      return;
+    }
 
     try {
-      const response = await axios.post(`${API_BASE}/api/interview/evaluate`, {
+      const response = await axios.post(`${API_BASE}/interview/evaluate`, {
         question: currentQuestion.text,
         answer: currentAnswer,
         topics: currentQuestion.topics.join(", "),
@@ -262,7 +289,7 @@ const MockInterviewPage = () => {
       setInterviewState('feedback');
     } catch (err) {
       console.error("Evaluation failed:", err);
-      const fallbackEval = {
+      setEvaluation({
         overall: 0,
         metrics: [
           { label: "Technical", score: 0 },
@@ -273,8 +300,7 @@ const MockInterviewPage = () => {
         strengths: "Evaluation unavailable",
         improvements: "Please try again",
         detailedFeedback: "Could not reach AI evaluation service. Please check your connection and try again."
-      };
-      setEvaluation(fallbackEval);
+      });
       setInterviewState('feedback');
     }
   };
@@ -451,8 +477,8 @@ const MockInterviewPage = () => {
               </div>
 
               <div className={`absolute top-4 right-4 text-[10px] font-bold px-2 py-1 rounded border transition-colors ${isAiSpeaking ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                  isRecording ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                    'bg-[#1a1f2e] text-slate-400 border-transparent'
+                isRecording ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                  'bg-[#1a1f2e] text-slate-400 border-transparent'
                 }`}>
                 AI: {isAiSpeaking ? 'Speaking...' : isRecording ? 'Listening...' : interviewState === 'evaluating' ? 'Thinking...' : 'Muted'}
               </div>
@@ -460,14 +486,26 @@ const MockInterviewPage = () => {
               <div className="text-center mt-auto">
                 <p className="text-slate-400 text-sm font-semibold mb-2">Question {currentQIndex + 1} of {questions.length}</p>
                 <span className={`text-[10px] font-black px-3 py-1 rounded uppercase tracking-widest border 
-                ${currentQuestion.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
+                ${currentQuestion.difficulty === 'Easy' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : currentQuestion.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
                   {currentQuestion.difficulty}
                 </span>
               </div>
             </div>
 
             {/* Current Question OR Feedback Panel */}
-            {interviewState !== 'feedback' ? (
+            {interviewState === 'evaluating' ? (
+              /* ---- EVALUATING OVERLAY ---- */
+              <div className="bg-[#0b0f19] border border-blue-500/30 rounded-2xl p-8 flex flex-col items-center justify-center min-h-[200px]">
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 bg-blue-600 rounded-full opacity-20 animate-ping"></div>
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center relative z-10">
+                    <Loader2 size={36} className="text-white animate-spin" />
+                  </div>
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">Analyzing Your Answer...</h3>
+                <p className="text-slate-400 text-sm text-center">Gemini AI is evaluating your response across multiple dimensions.</p>
+              </div>
+            ) : interviewState !== 'feedback' ? (
               <div className="bg-[#0b0f19] border border-[#1a1f2e] rounded-2xl p-6 relative">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-white font-bold">Current Question:</h3>
@@ -504,7 +542,7 @@ const MockInterviewPage = () => {
               </div>
             ) : (
               // Feedback Card
-              <div className="bg-white rounded-2xl p-6 shadow-xl relative animate-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white rounded-2xl p-6 shadow-xl relative" style={{ animation: 'slideUp 0.4s ease-out' }}>
                 <h3 className="text-[#1a1f2e] font-black text-xl mb-2">Previous Answer Score: {evaluation?.overall || 0}/10</h3>
                 <p className="text-slate-600 text-sm mb-6">
                   {evaluation?.detailedFeedback || "Review your performance metrics below."}
@@ -618,8 +656,8 @@ const MockInterviewPage = () => {
                     onClick={toggleRecording}
                     disabled={!isMicOn || interviewState !== 'answering'}
                     className={`flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isRecording
-                        ? 'bg-red-500/20 text-red-500 border border-red-500/30 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]'
-                        : 'bg-[#111624] text-slate-400 border border-[#1a1f2e] hover:text-white'
+                      ? 'bg-red-500/20 text-red-500 border border-red-500/30 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]'
+                      : 'bg-[#111624] text-slate-400 border border-[#1a1f2e] hover:text-white'
                       }`}
                   >
                     <Mic size={12} /> {isRecording ? 'Listening...' : 'Click to Speak'}
@@ -678,15 +716,15 @@ const MockInterviewPage = () => {
                   Submit & Evaluate Answer
                 </button>
               </div>
+            ) : interviewState === 'evaluating' ? (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 text-center mt-auto" style={{ animation: 'slideUp 0.3s ease-out' }}>
+                <Loader2 size={24} className="text-blue-400 animate-spin mx-auto mb-3" />
+                <p className="text-blue-400 font-bold text-sm mb-1">AI is evaluating your response...</p>
+                <p className="text-slate-500 text-xs">This usually takes 5-10 seconds</p>
+              </div>
             ) : (
-              <div className="bg-[#111624] border border-[#1a1f2e] rounded-xl p-4 text-center text-slate-400 text-sm font-semibold mt-auto">
-                {interviewState === 'evaluating' ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Bot size={16} className="animate-spin" /> Evaluating your response...
-                  </div>
-                ) : (
-                  'Review feedback on the left panel.'
-                )}
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 text-center text-emerald-400 text-sm font-semibold mt-auto">
+                ✓ Feedback ready — review on the left panel
               </div>
             )}
 
@@ -694,7 +732,7 @@ const MockInterviewPage = () => {
         </main>
       )}
 
-      {/* Embedded CSS for scrollbar */}
+      {/* Embedded CSS */}
       <style dangerouslySetInnerHTML={{
         __html: `
         .custom-scrollbar::-webkit-scrollbar {
@@ -709,6 +747,10 @@ const MockInterviewPage = () => {
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #3b4256; 
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}} />
     </div>
