@@ -7,7 +7,8 @@ import SockJS from 'sockjs-client/dist/sockjs';
 import {
     Swords, Copy, Check, ArrowRight, Loader2, Clock, Trophy,
     Code2, CloudUpload, ChevronDown, AlertTriangle, XCircle,
-    CheckCircle2, Shield, Zap, Users, ArrowLeft, Skull, Terminal
+    CheckCircle2, Shield, Zap, Users, ArrowLeft, Skull, Terminal,
+    ShieldAlert
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_BASE_URL;
@@ -732,6 +733,47 @@ const BlitzBattlePage = () => {
                                         );
                                     } catch { return null; }
                                 })()}
+
+                                {/* Auto Plagiarism Result */}
+                                {submissionResult.plagiarismVerdict && (
+                                    <div className="border-t border-gray-800 pt-3">
+                                        <div className={`rounded-lg border p-3 space-y-2 ${submissionResult.plagiarismVerdict === 'LIKELY_ORIGINAL' ? 'bg-emerald-500/5 border-emerald-500/20' :
+                                            submissionResult.plagiarismVerdict === 'SUSPICIOUS' ? 'bg-yellow-500/5 border-yellow-500/20' :
+                                                'bg-red-500/5 border-red-500/20'
+                                            }`}>
+                                            <div className="flex items-center gap-2">
+                                                <ShieldAlert size={12} className={submissionResult.plagiarismVerdict === 'LIKELY_ORIGINAL' ? 'text-emerald-400' : submissionResult.plagiarismVerdict === 'SUSPICIOUS' ? 'text-yellow-400' : 'text-red-400'} />
+                                                <span className={`text-xs font-bold ${submissionResult.plagiarismVerdict === 'LIKELY_ORIGINAL' ? 'text-emerald-400' :
+                                                    submissionResult.plagiarismVerdict === 'SUSPICIOUS' ? 'text-yellow-400' : 'text-red-400'
+                                                    }`}>
+                                                    {submissionResult.plagiarismVerdict.replace(/_/g, ' ')}
+                                                </span>
+                                                {submissionResult.plagiarismPenalty && (
+                                                    <span className="ml-auto text-red-400 text-[10px] font-bold uppercase bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded">Penalty</span>
+                                                )}
+                                            </div>
+
+                                            {submissionResult.originalityScore != null && (
+                                                <div className="flex gap-4 text-[11px]">
+                                                    <span className="text-gray-500">Originality <span className="text-gray-200 font-mono font-bold">{submissionResult.originalityScore}%</span></span>
+                                                    <span className="text-gray-500">AI Likelihood <span className="text-gray-200 font-mono font-bold">{submissionResult.aiLikelihood}%</span></span>
+                                                </div>
+                                            )}
+
+                                            {submissionResult.originalityScore != null && (
+                                                <div className="w-full bg-gray-800 rounded-full h-1.5">
+                                                    <div className={`h-1.5 rounded-full transition-all ${submissionResult.originalityScore >= 70 ? 'bg-emerald-500' :
+                                                        submissionResult.originalityScore >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                                                        }`} style={{ width: `${submissionResult.originalityScore}%` }} />
+                                                </div>
+                                            )}
+
+                                            {submissionResult.plagiarismExplanation && (
+                                                <p className="text-gray-400 text-[11px] leading-relaxed">{submissionResult.plagiarismExplanation}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

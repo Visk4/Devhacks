@@ -72,6 +72,23 @@ public class Submission {
     @Column(name = "judged_at")
     private Instant judgedAt;
 
+    // ── Plagiarism fields (auto-checked before judging) ──
+    @Column(name = "plagiarism_verdict")
+    private String plagiarismVerdict;
+
+    @Column(name = "originality_score")
+    private Integer originalityScore;
+
+    @Column(name = "ai_likelihood")
+    private Integer aiLikelihood;
+
+    @Lob
+    @Column(name = "plagiarism_explanation", columnDefinition = "text")
+    private String plagiarismExplanation;
+
+    @Column(name = "plagiarism_penalty")
+    private Boolean plagiarismPenalty = false;
+
     @PrePersist
     public void setSubmittet(){
         this.submittedAt = Instant.now() ;
