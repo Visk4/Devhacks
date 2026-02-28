@@ -526,9 +526,7 @@ const Practicepage = () => {
             </div>
           </div>
 
-          <div className="hidden xl:block">
-            <RightSidebar />
-          </div>
+          
 
         </div>
       </main>
