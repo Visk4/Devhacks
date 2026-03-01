@@ -15,7 +15,7 @@ public class mailController {
 
     @GetMapping("/trySending")
     public ResponseEntity<?> send() {
-        if (mailService.sendOTP("shivsharansanjawad@gmail.com", 1234)) {
+        if (mailService.sendOTP("example@example.com", 1234)) {
             return ResponseEntity.ok().build();
         }
         return ResponseEntity.noContent().build();

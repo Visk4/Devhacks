@@ -1,6 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const CTASection = () => {
+  const navigate = useNavigate();
+
   return (
     <section id="cta" className="relative min-h-[80vh] flex flex-col items-center justify-center px-4 overflow-hidden font-sans bg-[#060812] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#121631] via-[#090b16] to-[#040509]">
       
@@ -54,7 +57,7 @@ const CTASection = () => {
 
         {/* Subtext */}
         <p className="text-slate-400 text-sm md:text-base max-w-lg mb-10 leading-relaxed font-medium">
-          Join 50,000+ developers competing daily. Prove your skills, climb the ranks, and get recognized by top tech companies.
+          Join thousands of developers competing daily. Prove your skills, climb the ranks, and get recognized by top tech companies.
         </p>
 
         {/* Action Buttons */}
@@ -62,6 +65,7 @@ const CTASection = () => {
           
           {/* Primary Button with Cut Corners */}
           <button 
+            onClick={() => navigate('/register')}
             style={{ 
               clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)' 
             }}
@@ -71,7 +75,7 @@ const CTASection = () => {
           </button>
 
           {/* Secondary Outline Button */}
-          <button className="w-full sm:w-auto bg-transparent border border-[#2d3342] text-white font-bold uppercase tracking-wider text-sm px-10 py-4 hover:bg-[#1a1f2e] transition-colors duration-300">
+          <button onClick={() => navigate('/login')} className="w-full sm:w-auto bg-transparent border border-[#2d3342] text-white font-bold uppercase tracking-wider text-sm px-10 py-4 hover:bg-[#1a1f2e] transition-colors duration-300">
             Join Live Contest
           </button>
           

@@ -33,6 +33,7 @@ import com.shivsharan.backend.repository.ContestProblemRepository;
 import com.shivsharan.backend.repository.ContestRepository;
 import com.shivsharan.backend.repository.ProblemRepository;
 import com.shivsharan.backend.repository.SubmissionRepository;
+import com.shivsharan.backend.repository.UserRepository;
 
 @Service
 public class ContestService {
@@ -51,6 +52,9 @@ public class ContestService {
 
     @Autowired
     private SubmissionRepository submissionRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private JobQueueService jobQueueService;
@@ -88,19 +92,38 @@ public class ContestService {
     }
 
     /**
-     * Get contest detail by ID
+     * Get contest detail by ID — auto-registers the user as participant
      */
+    @Transactional
     public ContestDetailDTO getContestDetail(UUID contestId, UUID userId) {
         Contest contest = contestRepository.findById(contestId)
                 .orElseThrow(() -> new RuntimeException("Contest not found: " + contestId));
 
         List<ContestProblem> contestProblems = contestProblemRepository.findByContest_IdOrderByDisplayOrderAsc(contestId);
-        Integer participantCount = participantRepository.countByContestId(contestId);
         
+        // Auto-register user if authenticated and not already registered
         boolean isRegistered = false;
         if (userId != null) {
             isRegistered = participantRepository.existsByContest_IdAndUser_Id(contestId, userId);
+            if (!isRegistered) {
+                User user = userRepository.findById(userId).orElse(null);
+                if (user != null) {
+                    ContestParticipantId pid = new ContestParticipantId(contestId, userId);
+                    ContestParticipant cp = ContestParticipant.builder()
+                            .id(pid)
+                            .contest(contest)
+                            .user(user)
+                            .totalPoints(0)
+                            .totalPenalty(0)
+                            .isVirtual(false)
+                            .build();
+                    participantRepository.save(cp);
+                    isRegistered = true;
+                }
+            }
         }
+
+        Integer participantCount = participantRepository.countByContestId(contestId);
 
         List<ContestDetailDTO.ContestProblemDTO> problemDTOs = contestProblems.stream()
                 .map(cp -> ContestDetailDTO.ContestProblemDTO.builder()
@@ -231,9 +254,18 @@ public class ContestService {
             throw new RuntimeException("Contest has ended");
         }
 
-        // Check if user is registered
+        // Auto-register user if not already registered
         if (!participantRepository.existsByContest_IdAndUser_Id(contestId, user.getId())) {
-            throw new RuntimeException("You must register for the contest first");
+            ContestParticipantId pid = new ContestParticipantId(contestId, user.getId());
+            ContestParticipant cp = ContestParticipant.builder()
+                    .id(pid)
+                    .contest(contest)
+                    .user(user)
+                    .totalPoints(0)
+                    .totalPenalty(0)
+                    .isVirtual(false)
+                    .build();
+            participantRepository.save(cp);
         }
 
         // Check if problem is part of contest

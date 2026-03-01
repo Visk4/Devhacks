@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flame, ChevronRight } from 'lucide-react';
+import { Flame } from 'lucide-react';
 
 const leaderboardData = [
   {
@@ -125,19 +125,6 @@ const Leaderboard = () => {
               Top gladiators of the current season.
             </p>
           </div>
-          
-          {/* Filter Tabs */}
-          <div className="flex items-center bg-[#0b0f19] p-1 rounded-full border border-[#1a1f2e]">
-            <button className="px-5 py-1.5 rounded-full bg-[#1e2536] text-white text-sm font-medium transition-colors">
-              Global
-            </button>
-            <button className="px-5 py-1.5 rounded-full text-slate-400 hover:text-white text-sm font-medium transition-colors">
-              Friends
-            </button>
-            <button className="px-5 py-1.5 rounded-full text-slate-400 hover:text-white text-sm font-medium transition-colors">
-              Squads
-            </button>
-          </div>
         </div>
 
         {/* Table Container */}
@@ -205,14 +192,6 @@ const Leaderboard = () => {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Footer Link */}
-        <div className="mt-6 flex justify-center">
-          <button className="flex items-center gap-1 text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors group">
-            VIEW FULL LEADERBOARD 
-            <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-          </button>
         </div>
 
       </div>

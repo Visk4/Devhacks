@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Users, Check, Crown, Plus, Hourglass, History } from 'lucide-react';
+import { Calendar, Clock, Users, Crown, Plus, Hourglass, History } from 'lucide-react';
 
 import CreateContestModal from './CreateContestModal';
-import RegisterContestModal from './RegisterContestModal';
 
 const baseURL = import.meta.env.VITE_BASE_URL || 'http://localhost:8080/api';
 
@@ -45,8 +44,6 @@ const ContestsPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [registeredContests, setRegisteredContests] = useState([]);
-  const [activeRegisterContest, setActiveRegisterContest] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   const [leaderboardEntries, setLeaderboardEntries] = useState([]);
@@ -61,6 +58,7 @@ const ContestsPage = () => {
         const token = localStorage.getItem('accessToken');
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const query = activeFilter === 'all' ? '' : `?status=${activeFilter}`;
+
         const response = await axios.get(`${baseURL}/contests${query}`, { headers });
         setContests(response.data || []);
       } catch (err) {
@@ -106,13 +104,6 @@ const ContestsPage = () => {
 
     fetchLeaderboard();
   }, [featuredContest]);
-
-  const handleRegistrationSuccess = (contestId) => {
-    if (contestId && !registeredContests.includes(contestId)) {
-      setRegisteredContests((prev) => [...prev, contestId]);
-    }
-    setRefreshTick((prev) => prev + 1);
-  };
 
   const listContests = contests.filter((contest) => contest.id !== featuredContest?.id);
 
@@ -227,14 +218,10 @@ const ContestsPage = () => {
                     <div className="flex items-center justify-between mt-auto">
                       <div className="flex items-center gap-1.5 text-blue-400 text-xs font-bold"><Clock size={14} /> {contest.status === 'UPCOMING' ? getTimeLeft(contest.startTime) : getTimeLeft(contest.endTime)}</div>
 
-                      {contest.status === 'ONGOING' ? (
-                        <button onClick={() => navigate(`/contest-arena?contestId=${contest.id}`)} className="bg-red-600/10 border border-red-500 hover:bg-red-600 hover:text-white text-red-400 px-5 py-2 rounded-lg text-sm font-bold transition-all">Join Now</button>
-                      ) : contest.status === 'ENDED' ? (
+                      {contest.status === 'ENDED' ? (
                         <button className="bg-slate-600/10 border border-slate-500/30 text-slate-500 px-5 py-2 rounded-lg text-sm font-bold cursor-not-allowed">Ended</button>
-                      ) : registeredContests.includes(contest.id) ? (
-                        <button className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-5 py-2 rounded-lg text-sm font-bold cursor-default"><Check size={16} /> Registered</button>
                       ) : (
-                        <button onClick={() => setActiveRegisterContest(contest)} className="bg-blue-600/10 border border-blue-500 hover:bg-blue-600 hover:text-white text-blue-400 px-5 py-2 rounded-lg text-sm font-bold transition-all">Register Now</button>
+                        <button onClick={() => navigate(`/contest-arena?contestId=${contest.id}`)} className="bg-purple-600/10 border border-purple-500 hover:bg-purple-600 hover:text-white text-purple-400 px-5 py-2 rounded-lg text-sm font-bold transition-all">{contest.status === 'ONGOING' ? 'Join Now' : 'Enter Contest'}</button>
                       )}
                     </div>
                   </div>
@@ -279,14 +266,6 @@ const ContestsPage = () => {
       </main>
 
       <CreateContestModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreated={() => setRefreshTick((prev) => prev + 1)} />
-
-      <RegisterContestModal
-        isOpen={!!activeRegisterContest}
-        onClose={() => setActiveRegisterContest(null)}
-        onSuccess={handleRegistrationSuccess}
-        contestId={activeRegisterContest?.id}
-        contestTitle={activeRegisterContest?.title}
-      />
     </div>
   );
 };

@@ -15,9 +15,9 @@ const API_BASE = import.meta.env.VITE_BASE_URL;
 const WS_URL = API_BASE?.replace('/api', '') + '/ws';
 
 const languageTemplates = {
-    python: `class Solution:\n    def solve(self):\n        pass`,
-    cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}`,
-    java: `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}`
+    python: `# Read input from stdin using input()\n# Print output to stdout using print()\n\n`,
+    cpp: `#include <iostream>\nusing namespace std;\n\n// Read input from stdin (cin) and print output to stdout (cout)\nint main(){\n    \n    return 0;\n}`,
+    java: `import java.util.*;\n\n// Class name must be Solution\npublic class Solution {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Read input from stdin and print output to stdout\n        \n    }\n}`
 };
 
 const getVerdictInfo = (status) => {

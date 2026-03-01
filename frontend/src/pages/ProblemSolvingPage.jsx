@@ -3,18 +3,18 @@ import Editor from "@monaco-editor/react";
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Code2, Flame, Coins, Bell, Star, Clock, Database, CheckCircle2,
-  ChevronDown, RotateCcw, Settings, Maximize, Play, CloudUpload,
-  Terminal, ListTodo, HelpCircle, AlertCircle, AlertTriangle, ChevronRight,
+  Code2, Coins, Clock, Database, CheckCircle2,
+  ChevronDown, CloudUpload, Terminal, ListTodo,
+  AlertCircle, AlertTriangle, ChevronRight,
   Loader2, XCircle, ShieldAlert
 } from 'lucide-react';
 
 const baseURL = import.meta.env.VITE_BASE_URL || 'http://localhost:8080/api';
 
 const languageTemplates = {
-  python: `class Solution:\n    def solve(self):\n        pass`,
-  cpp: `#include <iostream>\nusing namespace std;\n\nclass Solution {\npublic:\n    void solve() {\n        \n    }\n};`,
-  java: `class Solution {\n    public void solve() {\n        \n    }\n}`
+  python: `# Read input from stdin using input()\n# Print output to stdout using print()\n\n`,
+  cpp: `#include <iostream>\nusing namespace std;\n\n// Read input from stdin (cin) and print output to stdout (cout)\nint main(){\n    \n    return 0;\n}`,
+  java: `import java.util.*;\n\n// Class name must be Solution\npublic class Solution {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Read input from stdin and print output to stdout\n        \n    }\n}`
 };
 
 // Map verdicts to user-friendly text and colors
@@ -331,9 +331,7 @@ const ProblemSolvingPage = () => {
                 Solutions
               </button>
             </div>
-            <button className="flex items-center gap-1 text-[13px] font-semibold text-slate-400 hover:text-white transition-colors">
-              <Star size={14} /> Add to List
-            </button>
+
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -405,7 +403,8 @@ const ProblemSolvingPage = () => {
                 <h4 className="text-white font-bold text-sm mb-1">Stuck? Check Discussion & Solutions</h4>
                 <p className="text-slate-400 text-xs">See how top rankers solved this problem with O(n) complexity.</p>
               </div>
-            )}
+              <ChevronRight className="text-purple-400 group-hover:translate-x-1 transition-transform" size={20} />
+            </div>
 
           </div>
         </div>
@@ -428,18 +427,9 @@ const ProblemSolvingPage = () => {
                 </select>
                 <ChevronDown size={14} className="text-slate-500 absolute right-2.5 pointer-events-none" />
               </div>
-
-              <div className="w-[1px] h-4 bg-[#1a1f2e] mx-1"></div>
-
-              <button className="text-slate-400 hover:text-white transition-colors"><RotateCcw size={16} /></button>
-              <button className="text-slate-400 hover:text-white transition-colors"><Settings size={16} /></button>
-              <button className="text-slate-400 hover:text-white transition-colors"><Maximize size={16} /></button>
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-1.5 bg-[#1e2536] hover:bg-[#2a3143] text-slate-200 text-[13px] font-bold px-4 py-1.5 rounded-lg transition-colors">
-                <Play size={14} className="text-emerald-400 fill-emerald-400" /> Run
-              </button>
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
@@ -636,26 +626,9 @@ const ProblemSolvingPage = () => {
 
           </div>
 
-          <button className="absolute bottom-[40px] right-6 flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20 transition-all z-30">
-            <HelpCircle size={16} /> Help
-          </button>
-
         </div>
       </div>
-      {/* --- FOOTER --- */}
-      <footer className="h-[30px] flex items-center justify-between px-4 border-t border-[#1a1f2e] bg-[#0b0f19] text-[11px] font-medium text-slate-400 shrink-0 select-none z-10 relative">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 cursor-pointer hover:text-white"><Terminal size={12} /> master</span>
-          <span className="flex items-center gap-1.5 cursor-pointer hover:text-white"><AlertCircle size={12} className="text-red-400" /> 0 Errors</span>
-          <span className="flex items-center gap-1.5 cursor-pointer hover:text-white"><AlertTriangle size={12} className="text-yellow-500" /> 0 Warnings</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="capitalize">{language}</span>
-          <span className="flex items-center gap-1.5 text-emerald-500 font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Connected
-          </span>
-        </div>
-      </footer>
+
 
       {/* Custom Styles */}
       <style dangerouslySetInnerHTML={{

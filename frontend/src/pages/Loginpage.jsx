@@ -6,15 +6,15 @@ import Spline from "@splinetool/react-spline";
 import axios from "axios"; // Added axios import
 const baseURL = import.meta.env.VITE_BASE_URL;
 
+const oauthEnabled = import.meta.env.VITE_OAUTH_ENABLED === 'true';
+
 const Loginpage = () => {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
-  // Changed state from email to username to match API payload
   const [username, setUsername] = useState(""); 
   const [password, setPassword] = useState("");
   
-  // Added state for loading and error handling
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -42,9 +42,9 @@ const Loginpage = () => {
       navigate("/home");
     } catch (err) {
       console.error("Login error:", err);
-      // Display backend error message if available, else generic error
+      const data = err.response?.data;
       setError(
-        err.response?.data?.message || "Invalid credentials. Please try again."
+        data?.error || data?.message || "Invalid credentials. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -148,23 +148,6 @@ const Loginpage = () => {
                 </div>
               </div>
 
-              {/* Remember & Forgot */}
-              <div className="flex items-center justify-between text-sm mt-1">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    className="w-3.5 h-3.5 rounded bg-[#05070a] border-[#1a1f2e] text-cyan-500 focus:ring-cyan-500 focus:ring-offset-[#0b0f19] cursor-pointer"
-                  />
-                  <span className="text-slate-400 group-hover:text-slate-300 transition-colors text-xs font-medium">Remember me</span>
-                </label>
-                <button
-                  type="button"
-                  className="text-cyan-400 hover:text-cyan-300 text-xs font-bold tracking-wide transition-colors"
-                >
-                  FORGOT PASSWORD?
-                </button>
-              </div>
-
               {/* SUBMIT */}
               <button
                 type="submit"
@@ -176,32 +159,36 @@ const Loginpage = () => {
 
             </form>
 
-            {/* DIVIDER */}
-            <div className="relative mt-6 mb-5">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#1a1f2e]"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-[#0b0f19] text-slate-500 text-[10px] font-bold uppercase tracking-wider">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+            {oauthEnabled && (
+              <>
+                {/* DIVIDER */}
+                <div className="relative mt-6 mb-5">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#1a1f2e]"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-3 bg-[#0b0f19] text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
 
-            {/* GOOGLE SIGN IN BUTTON */}
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-3 bg-[#05070a] border border-[#1a1f2e] hover:bg-[#111724] hover:border-[#2a3143] text-white py-3 rounded-xl font-bold text-sm transition-all shadow-sm"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="#EA4335" d="M5.266 9.765A7.077 7.077 0 0112 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115z"/>
-                <path fill="#34A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.076 7.076 0 01-6.723-4.806L1.24 17.35C3.198 21.302 7.269 24 12 24c3.24 0 6.136-1.145 8.358-3.04l-4.318-2.947z"/>
-                <path fill="#4A90E2" d="M19.834 20.96C21.2 19.336 22 17.155 22 14.636c0-1.014-.11-1.99-.304-2.927H12v5.454h5.834z"/>
-                <path fill="#FBBC05" d="M5.266 14.235A7.03 7.03 0 014.909 12c0-.773.136-1.518.357-2.235L1.24 6.65A11.934 11.934 0 000 12c0 1.92.445 3.73 1.237 5.35l4.029-3.115z"/>
-              </svg>
-              Google
-            </button>
+                {/* GOOGLE SIGN IN BUTTON */}
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  className="w-full flex items-center justify-center gap-3 bg-[#05070a] border border-[#1a1f2e] hover:bg-[#111724] hover:border-[#2a3143] text-white py-3 rounded-xl font-bold text-sm transition-all shadow-sm"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M5.266 9.765A7.077 7.077 0 0112 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115z"/>
+                    <path fill="#34A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.076 7.076 0 01-6.723-4.806L1.24 17.35C3.198 21.302 7.269 24 12 24c3.24 0 6.136-1.145 8.358-3.04l-4.318-2.947z"/>
+                    <path fill="#4A90E2" d="M19.834 20.96C21.2 19.336 22 17.155 22 14.636c0-1.014-.11-1.99-.304-2.927H12v5.454h5.834z"/>
+                    <path fill="#FBBC05" d="M5.266 14.235A7.03 7.03 0 014.909 12c0-.773.136-1.518.357-2.235L1.24 6.65A11.934 11.934 0 000 12c0 1.92.445 3.73 1.237 5.35l4.029-3.115z"/>
+                  </svg>
+                  Google
+                </button>
+              </>
+            )}
 
             {/* FOOTER */}
             <div className="mt-6 pt-5 border-t border-[#1a1f2e]">

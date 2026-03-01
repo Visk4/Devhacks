@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 export default function Hero() {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-[#070b1a] via-[#0b1020] to-[#070b1a] text-center px-6 overflow-hidden">
       
@@ -49,11 +52,11 @@ export default function Hero() {
           transition={{ delay: 1.3 }}
           className="mt-10 flex flex-col sm:flex-row gap-6 justify-center"
         >
-          <button className="px-8 py-3 rounded-md border border-cyan-400 text-cyan-400 font-semibold hover:bg-cyan-400 hover:text-black transition duration-300 shadow-lg shadow-cyan-500/20">
+          <button onClick={() => navigate('/login')} className="px-8 py-3 rounded-md border border-cyan-400 text-cyan-400 font-semibold hover:bg-cyan-400 hover:text-black transition duration-300 shadow-lg shadow-cyan-500/20">
             ENTER ARENA →
           </button>
 
-          <button className="px-8 py-3 rounded-md bg-[#10172a] border border-white/10 text-white font-semibold hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 transition duration-300">
+          <button onClick={() => navigate('/register')} className="px-8 py-3 rounded-md bg-[#10172a] border border-white/10 text-white font-semibold hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 transition duration-300">
             START 1V1 BATTLE
           </button>
         </motion.div>

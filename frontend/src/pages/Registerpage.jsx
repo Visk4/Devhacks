@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { User, Mail, Lock, Eye, EyeOff, Code2 } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, Code2, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Spline from "@splinetool/react-spline";
 import axios from "axios"; // Added axios import
@@ -12,6 +12,7 @@ const Registerpage = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [college, setCollege] = useState("");
   
   // Added state for loading and error handling
   const [isLoading, setIsLoading] = useState(false);
@@ -23,14 +24,13 @@ const Registerpage = () => {
     setError("");
 
     try {
-      // Constructing the payload with dynamic form data and requested static data
       const payload = {
         username: username,
         password: password,
         email: email,
-        description: "Ready for battle", // Static data
-        college: "SPIT",                 // Static data
-        gender: "MALE"                   // Static data
+        description: "",
+        college: college || "Unknown",
+        gender: "MALE"
       };
 
       // API call to the backend
@@ -38,14 +38,15 @@ const Registerpage = () => {
 
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("refreshToken", response.data.refreshToken);
+      localStorage.setItem("username", response.data.username || username);
 
       // Navigate to dashboard on success
       navigate("/home");
     } catch (err) {
       console.error("Registration error:", err);
-      // Display backend error message if available, else generic error
+      const data = err.response?.data;
       setError(
-        err.response?.data?.message || "Failed to create account. Please try again."
+        data?.error || data?.message || "Failed to create account. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -157,6 +158,23 @@ const Registerpage = () => {
                       <Eye className="w-5 h-5" />
                     )}
                   </button>
+                </div>
+              </div>
+
+              {/* COLLEGE */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">
+                  College / Organization
+                </label>
+                <div className="relative">
+                  <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <input
+                    type="text"
+                    value={college}
+                    onChange={(e) => setCollege(e.target.value)}
+                    placeholder="e.g. MIT, Stanford (optional)"
+                    className="w-full pl-12 pr-4 py-3.5 bg-[#05070a] border border-[#1a1f2e] text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition-all placeholder-slate-600 text-sm"
+                  />
                 </div>
               </div>
 

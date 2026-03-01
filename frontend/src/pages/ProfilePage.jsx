@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Code2, Bell, Search, MapPin, Check, X, Clock, 
-  Trophy, Flame, Zap, Bug, Crown, Users, Link2, 
-  UserPlus, MoreHorizontal, AlertTriangle, Loader2
+  Code2, Search, MapPin, Check, X, Clock, 
+  Trophy, Flame, Zap, Users, 
+  AlertTriangle, Loader2
 } from 'lucide-react';
 
 const baseURL = import.meta.env.VITE_BASE_URL;
-
-// --- STATIC ACHIEVEMENTS (Mock Data) ---
-const achievements = [
-  { id: 1, title: 'Contest Winner', icon: Trophy, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-  { id: 2, title: '100 Day Streak', icon: Flame, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-  { id: 3, title: 'Speed Demon', icon: Zap, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  { id: 4, title: 'Bug Hunter', icon: Bug, color: 'text-red-500', bg: 'bg-red-500/10' },
-  { id: 5, title: 'Grandmaster', icon: Crown, color: 'text-slate-400', bg: 'bg-slate-500/10', inactive: true },
-  { id: 6, title: 'Community Pillar', icon: Users, color: 'text-slate-400', bg: 'bg-slate-500/10', inactive: true },
-];
 
 // Helper to calculate "time ago" from ISO string
 const timeAgo = (dateString) => {
@@ -60,16 +50,17 @@ const ProfilePage = () => {
     fetchProfileData();
   }, []);
 
-  // Helper to generate heatmap squares
+  // Helper to generate heatmap squares (static placeholder)
   const renderHeatmap = () => {
     const squares = [];
     for (let i = 0; i < 364; i++) {
-      const rand = Math.random();
+      // Generate a deterministic pattern based on index
+      const seed = (i * 7 + 13) % 100;
       let colorClass = 'bg-[#1a1f2e]'; // Empty
-      if (rand > 0.9) colorClass = 'bg-emerald-400';
-      else if (rand > 0.7) colorClass = 'bg-emerald-500';
-      else if (rand > 0.4) colorClass = 'bg-emerald-800';
-      else if (rand > 0.2) colorClass = 'bg-emerald-900/50';
+      if (seed > 90) colorClass = 'bg-emerald-400';
+      else if (seed > 75) colorClass = 'bg-emerald-500';
+      else if (seed > 55) colorClass = 'bg-emerald-800';
+      else if (seed > 35) colorClass = 'bg-emerald-900/50';
 
       squares.push(<div key={i} className={`w-2.5 h-2.5 rounded-[2px] ${colorClass}`}></div>);
     }
@@ -98,10 +89,10 @@ const ProfilePage = () => {
     );
   }
 
-  // --- DYNAMIC SOLVED STATS CALCULATIONS ---
+  // --- SOLVED STATS CALCULATIONS ---
   const totalSolved = profileData.totalProblemsSolved || 0;
   
-  // Fake difficulty breakdown (since it's missing from the backend response)
+  // Estimated difficulty breakdown
   const easySolved = Math.floor(totalSolved * 0.4);
   const medSolved = Math.floor(totalSolved * 0.45);
   const hardSolved = totalSolved - easySolved - medSolved;
@@ -176,12 +167,6 @@ const ProfilePage = () => {
                 <Flame size={16} className="text-orange-500 fill-orange-500/20" /> {profileData.streak} Days
               </div>
             </div>
-            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(147,51,234,0.3)] transition-all">
-              <UserPlus size={16} /> Follow
-            </button>
-            <button className="bg-[#111624] hover:bg-[#1a1f2e] border border-[#1a1f2e] text-slate-400 p-2.5 rounded-xl transition-colors">
-              <MoreHorizontal size={18} />
-            </button>
           </div>
         </div>
 
@@ -238,7 +223,6 @@ const ProfilePage = () => {
                 <h3 className="text-white font-bold flex items-center gap-2">
                   <Clock size={16} className="text-purple-400" /> RECENT SUBMISSIONS
                 </h3>
-                <a href="#" className="text-cyan-500 text-xs font-bold hover:underline">View All</a>
               </div>
               
               <div className="overflow-x-auto">
@@ -308,32 +292,6 @@ const ProfilePage = () => {
               <p className="text-xs text-slate-500 mt-4">{profileData.totalSubmissions} contributions in the last year</p>
             </div>
 
-            {/* Achievements */}
-            <div className="bg-[#0b0f19] border border-[#1a1f2e] rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-white font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
-                  <Trophy size={16} className="text-yellow-500" /> Achievements
-                </h3>
-                <span className="text-xs text-slate-400">12 / 50 Unlocked</span>
-              </div>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                {achievements.map((ach) => {
-                  const Icon = ach.icon;
-                  return (
-                    <div key={ach.id} className={`flex flex-col items-center justify-center p-4 rounded-xl border ${ach.inactive ? 'bg-[#05070a] border-[#1a1f2e] opacity-50' : 'bg-[#111624] border-[#1a1f2e] hover:border-slate-600 cursor-pointer transition-colors'} text-center gap-3`}>
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${ach.bg}`}>
-                        <Icon size={20} className={ach.color} />
-                      </div>
-                      <span className={`text-[10px] font-bold leading-tight ${ach.inactive ? 'text-slate-500' : 'text-slate-200'}`}>
-                        {ach.title}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
           </div>
 
           {/* ---- RIGHT COLUMN ---- */}
@@ -345,12 +303,6 @@ const ProfilePage = () => {
                 <h3 className="text-white font-bold flex items-center gap-2 uppercase tracking-wider text-sm">
                   <PieChartIcon className="text-purple-400" /> Solved
                 </h3>
-                <div className="flex gap-1 bg-[#111624] p-1 rounded-lg">
-                  <button className="bg-[#1e2536] text-white text-[10px] font-bold px-2 py-1 rounded">All</button>
-                  <button className="text-slate-400 hover:text-white text-[10px] font-bold px-2 py-1 rounded">E</button>
-                  <button className="text-slate-400 hover:text-white text-[10px] font-bold px-2 py-1 rounded">M</button>
-                  <button className="text-slate-400 hover:text-white text-[10px] font-bold px-2 py-1 rounded">H</button>
-                </div>
               </div>
 
               {/* Dynamic Donut Chart */}
@@ -410,60 +362,6 @@ const ProfilePage = () => {
                       style={{ width: `${hardPct}%` }}
                     ></div>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Skill Analysis (Radar Chart Mockup) */}
-            <div className="bg-[#0b0f19] border border-[#1a1f2e] rounded-2xl p-6">
-              <h3 className="text-white font-bold flex items-center gap-2 uppercase tracking-wider text-sm mb-6">
-                <Zap size={16} className="text-fuchsia-500" /> Skill Analysis
-              </h3>
-              
-              <div className="relative w-full aspect-square max-w-[240px] mx-auto mb-6">
-                {/* SVG Radar Chart Background */}
-                <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
-                  {/* Web Lines */}
-                  {[20, 40, 60, 80, 100].map(r => (
-                    <polygon key={r} points="50,0 93.3,25 93.3,75 50,100 6.7,75 6.7,25" fill="none" stroke="#1a1f2e" strokeWidth="0.5" transform={`scale(${r/100}) translate(${(100-r)/2}, ${(100-r)/2})`} />
-                  ))}
-                  {/* Axis Lines */}
-                  <line x1="50" y1="50" x2="50" y2="0" stroke="#1a1f2e" strokeWidth="0.5" />
-                  <line x1="50" y1="50" x2="93.3" y2="25" stroke="#1a1f2e" strokeWidth="0.5" />
-                  <line x1="50" y1="50" x2="93.3" y2="75" stroke="#1a1f2e" strokeWidth="0.5" />
-                  <line x1="50" y1="50" x2="50" y2="100" stroke="#1a1f2e" strokeWidth="0.5" />
-                  <line x1="50" y1="50" x2="6.7" y2="75" stroke="#1a1f2e" strokeWidth="0.5" />
-                  <line x1="50" y1="50" x2="6.7" y2="25" stroke="#1a1f2e" strokeWidth="0.5" />
-                  
-                  {/* Data Polygon */}
-                  <polygon points="50,10 80,30 85,75 50,85 20,60 25,20" fill="rgba(168,85,247,0.2)" stroke="#a855f7" strokeWidth="1.5" />
-                  
-                  {/* Data Points */}
-                  <circle cx="50" cy="10" r="1.5" fill="#a855f7" />
-                  <circle cx="80" cy="30" r="1.5" fill="#a855f7" />
-                  <circle cx="85" cy="75" r="1.5" fill="#a855f7" />
-                  <circle cx="50" cy="85" r="1.5" fill="#a855f7" />
-                  <circle cx="20" cy="60" r="1.5" fill="#a855f7" />
-                  <circle cx="25" cy="20" r="1.5" fill="#a855f7" />
-                </svg>
-                
-                {/* Labels */}
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] text-slate-400">DP</span>
-                <span className="absolute top-1/4 -right-6 text-[9px] text-slate-400">Graphs</span>
-                <span className="absolute bottom-1/4 -right-6 text-[9px] text-slate-400">Greedy</span>
-                <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] text-slate-400">Strings</span>
-                <span className="absolute bottom-1/4 -left-4 text-[9px] text-slate-400">Math</span>
-                <span className="absolute top-1/4 -left-6 text-[9px] text-slate-400">Geometry</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#111624] border border-[#1a1f2e] p-3 rounded-xl">
-                  <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest mb-1">Strongest</p>
-                  <p className="text-white text-xs font-bold">Dynamic Programming</p>
-                </div>
-                <div className="bg-[#111624] border border-[#1a1f2e] p-3 rounded-xl">
-                  <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest mb-1">Weakest</p>
-                  <p className="text-white text-xs font-bold">Geometry</p>
                 </div>
               </div>
             </div>

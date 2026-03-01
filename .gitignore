@@ -1,0 +1,17 @@
+# Environment secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Logs / crash dumps
+*.log
+hs_err_pid*
+
+# Build artifacts
+**/target/
+**/dist/
+**/build/

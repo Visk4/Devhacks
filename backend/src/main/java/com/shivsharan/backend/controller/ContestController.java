@@ -1,20 +1,38 @@
 package com.shivsharan.backend.controller;
 
-import com.shivsharan.backend.DTO.*;
-import com.shivsharan.backend.model.*;
-import com.shivsharan.backend.repository.UserRepository;
-import com.shivsharan.backend.service.ContestService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.shivsharan.backend.DTO.ContestDetailDTO;
+import com.shivsharan.backend.DTO.ContestListDTO;
+import com.shivsharan.backend.DTO.ContestSubmitRequest;
+import com.shivsharan.backend.DTO.CreateContestRequest;
+import com.shivsharan.backend.DTO.LeaderboardDTO;
+import com.shivsharan.backend.model.Contest;
+import com.shivsharan.backend.model.ContestProblem;
+import com.shivsharan.backend.model.Submission;
+import com.shivsharan.backend.model.User;
+import com.shivsharan.backend.repository.ContestParticipantRepository;
+import com.shivsharan.backend.repository.UserRepository;
+import com.shivsharan.backend.service.ContestService;
 
 @RestController
 @RequestMapping("/api/contests")
@@ -26,6 +44,9 @@ public class ContestController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ContestParticipantRepository participantRepository;
 
     /**
      * GET /api/contests - List all contests
@@ -50,6 +71,21 @@ public class ContestController {
                 contests = contestService.getAllContests();
         }
         return ResponseEntity.ok(contests);
+    }
+
+    /**
+     * GET /api/contests/my-registrations - Get contest IDs the current user is registered for
+     */
+    @GetMapping("/my-registrations")
+    public ResponseEntity<?> getMyRegistrations() {
+        UUID userId = getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.ok(List.of());
+        }
+        List<UUID> contestIds = participantRepository.findByUser_Id(userId).stream()
+                .map(cp -> cp.getContest().getId())
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(contestIds);
     }
 
     /**

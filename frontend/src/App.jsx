@@ -69,8 +69,6 @@ const App = () => {
         <Route path="register" element={<Registerpage />} />
         <Route path="oauth2/callback" element={<OAuth2Callback />} />
         
-        {/* Added Community Route */}
-
         <Route path="games" element={<BaseLayout />}>
           <Route index element={<GamePage />} />
         </Route>
@@ -83,7 +81,6 @@ const App = () => {
           <Route index element={<CommunityPage />} />
         </Route>
 
-        {/* Fixed relative paths (removed leading slash) */}
         <Route path="ctrl-fix-it" element={<CtrlFixItPage />} />
         <Route path="battle" element={<BlitzBattlePage />} />
       </Route>

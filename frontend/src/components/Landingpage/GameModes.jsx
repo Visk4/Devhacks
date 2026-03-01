@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Bug, Shield, ArrowRight } from 'lucide-react';
+import { Users, Bug, Shield } from 'lucide-react';
 
 const GameModes = () => {
   return (
@@ -16,11 +16,6 @@ const GameModes = () => {
               Choose your battlefield.
             </p>
           </div>
-          
-          <a href="#" className="flex items-center gap-1 text-cyan-400 font-semibold text-sm hover:text-cyan-300 transition-colors group pb-1">
-            View All Modes 
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-          </a>
         </div>
 
         {/* Main Content Grid */}
@@ -50,11 +45,6 @@ const GameModes = () => {
               <p className="text-slate-300 text-sm leading-relaxed max-w-sm mb-6">
                 Fast-paced 5-minute coding sprints. Solve easy to medium problems against 5 opponents. Speed is everything.
               </p>
-              
-              <button className="flex items-center gap-2.5 bg-[#1e2536]/80 backdrop-blur-md hover:bg-[#2a3143] border border-white/10 text-white font-bold uppercase tracking-wider text-xs px-6 py-3 rounded w-fit transition-all">
-                Join Queue
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></span>
-              </button>
             </div>
           </div>
 

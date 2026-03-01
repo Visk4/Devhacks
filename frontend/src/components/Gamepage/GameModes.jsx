@@ -18,14 +18,9 @@ const GameModes = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
         <div className="flex items-center gap-3">
           <Gamepad2 className="w-8 h-8 text-purple-400" />
-          {/* Added text-white font-display here */}
           <h2 className="text-3xl md:text-4xl uppercase tracking-wide text-white font-display">
             Game Modes
           </h2>
-        </div>
-        <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">
-          <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse shadow-[0_0_10px_rgba(168,85,247,0.8)]"></div>
-          12,458 Players Online
         </div>
       </div>
 
@@ -38,14 +33,10 @@ const GameModes = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
 
           <div className="relative z-10 flex-grow">
-            {/* Header: Icon & Badge */}
+            {/* Header: Icon */}
             <div className="flex justify-between items-start mb-6">
               <div className="p-4 bg-purple-600 rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.4)] group-hover:shadow-[0_0_30px_rgba(168,85,247,0.8)] transition-all duration-300 group-hover:-translate-y-1">
                 <AlertCircle className="w-8 h-8 text-white" />
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-red-500/20 border border-red-500/30 rounded-full">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></div>
-                <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Live</span>
               </div>
             </div>
 

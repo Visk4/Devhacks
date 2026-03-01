@@ -135,19 +135,25 @@ public class JudgeService {
 
                     logger.info("Starting fresh session container: {}", newName);
                     
-                    // Try with seccomp first (Linux), fall back to without if it fails (Windows Docker)
+                    // Detect execution environment to choose correct Docker flags
                     String osName = System.getProperty("os.name", "").toLowerCase();
                     boolean isWindows = osName.contains("win");
+                    boolean isInsideDocker = new java.io.File("/.dockerenv").exists();
                     
                     List<String> dockerCmd = new ArrayList<>(List.of("docker", "run", "-d",
                             "--name", newName,
                             "--network", "none",
                             "--memory", "2g",
-                            "--cpus", "2.0",
-                            "--cgroupns", "host"));
+                            "--cpus", "2.0"));
                     
-                    // On Windows Docker, seccomp can cause timeouts, so skip it
-                    if (!isWindows) {
+                    // --cgroupns host only works on bare-metal Linux, not in Docker-in-Docker or Windows
+                    if (!isWindows && !isInsideDocker) {
+                        dockerCmd.add("--cgroupns");
+                        dockerCmd.add("host");
+                    }
+                    
+                    // Seccomp profile only on bare-metal Linux (not Windows, not Docker-in-Docker)
+                    if (!isWindows && !isInsideDocker) {
                         String seccompPath = new java.io.File("sandbox/seccomp.json").getAbsolutePath();
                         dockerCmd.add("--security-opt");
                         dockerCmd.add("seccomp=" + seccompPath);
@@ -182,12 +188,17 @@ public class JudgeService {
 
     @PreDestroy
     public void stopSandbox() {
-        logger.info("Stopping sandbox container: {}", activeContainerName);
-        try {
-            runCommand(List.of("docker", "kill", activeContainerName), 5000L);
-            runCommand(List.of("docker", "rm", activeContainerName), 5000L);
-        } catch (Exception e) {
-            logger.error("Error stopping sandbox container", e);
+        // Only clean up session containers we created, not the compose-managed persistent one
+        if (activeContainerName != null && activeContainerName.contains("-session-")) {
+            logger.info("Stopping sandbox session container: {}", activeContainerName);
+            try {
+                runCommand(List.of("docker", "kill", activeContainerName), 5000L);
+                runCommand(List.of("docker", "rm", activeContainerName), 5000L);
+            } catch (Exception e) {
+                logger.error("Error stopping sandbox container", e);
+            }
+        } else {
+            logger.info("Skipping cleanup of externally-managed sandbox: {}", activeContainerName);
         }
     }
 

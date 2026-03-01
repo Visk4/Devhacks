@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, BarChart2, Target, ArrowUp } from 'lucide-react';
+import { Check, BarChart2, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ArenaChallengeAndProgress = ({ dailyQuestion }) => {
@@ -120,84 +120,59 @@ const ArenaChallengeAndProgress = ({ dailyQuestion }) => {
 
       </div>
 
-      {/* RIGHT COLUMN: Your Progress */}
+      {/* RIGHT COLUMN: Quick Links */}
       <div className="lg:col-span-1 flex flex-col gap-6">
         
         <div>
-          <h2 className="text-slate-400 font-bold text-xs tracking-widest uppercase mb-4">Your Progress</h2>
+          <h2 className="text-slate-400 font-bold text-xs tracking-widest uppercase mb-4">Quick Links</h2>
           
           <div className="flex flex-col gap-3">
             
-            {/* Problems Solved */}
-            <div className="bg-[#0b0f19] border border-[#1a1f2e] hover:border-[#2a3143] rounded-xl p-4 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+            <div 
+              onClick={() => navigate('/practice')}
+              className="bg-[#0b0f19] border border-[#1a1f2e] hover:border-[#2a3143] rounded-xl p-4 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
                   <Check size={18} className="text-emerald-500" />
                 </div>
                 <div>
-                  <p className="text-slate-400 text-xs mb-0.5">Problems Solved (Week)</p>
-                  <p className="text-white font-bold text-lg tracking-tight">24</p>
+                  <p className="text-white font-bold text-sm">Practice Problems</p>
+                  <p className="text-slate-500 text-xs">Sharpen your skills</p>
                 </div>
-              </div>
-              <div className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-1 rounded">
-                +12%
               </div>
             </div>
 
-            {/* Rating Change */}
-            <div className="bg-[#0b0f19] border border-[#1a1f2e] hover:border-[#2a3143] rounded-xl p-4 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+            <div 
+              onClick={() => navigate('/contests')}
+              className="bg-[#0b0f19] border border-[#1a1f2e] hover:border-[#2a3143] rounded-xl p-4 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
                   <BarChart2 size={18} className="text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-slate-400 text-xs mb-0.5">Rating Change (Today)</p>
-                  <p className="text-white font-bold text-lg tracking-tight">+15</p>
+                  <p className="text-white font-bold text-sm">Contests</p>
+                  <p className="text-slate-500 text-xs">Compete with others</p>
                 </div>
-              </div>
-              <div className="bg-emerald-500/10 text-emerald-400 p-1 rounded">
-                <ArrowUp size={14} strokeWidth={3} />
               </div>
             </div>
 
-            {/* Accuracy */}
-            <div className="bg-[#0b0f19] border border-[#1a1f2e] hover:border-[#2a3143] rounded-xl p-4 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
-              <div className="flex items-center gap-4 relative z-10">
+            <div 
+              onClick={() => navigate('/profile')}
+              className="bg-[#0b0f19] border border-[#1a1f2e] hover:border-[#2a3143] rounded-xl p-4 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
                   <Target size={18} className="text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-slate-400 text-xs mb-0.5">Accuracy</p>
-                  <p className="text-white font-bold text-lg tracking-tight">87%</p>
+                  <p className="text-white font-bold text-sm">Your Profile</p>
+                  <p className="text-slate-500 text-xs">View stats & submissions</p>
                 </div>
-              </div>
-              {/* Simple progress bar mock on the right */}
-              <div className="w-12 h-1.5 bg-[#1a1f2e] rounded-full relative z-10 overflow-hidden">
-                <div className="absolute top-0 left-0 h-full bg-blue-500 w-[87%] rounded-full"></div>
               </div>
             </div>
 
-          </div>
-        </div>
-
-        {/* Online Friends Preview */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-slate-400 font-bold text-xs tracking-widest uppercase">Online Friends</h2>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          </div>
-          
-          <div className="bg-[#0b0f19] border border-[#1a1f2e] hover:border-[#2a3143] rounded-xl p-4 transition-colors">
-            <div className="flex items-center justify-between cursor-pointer group">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <img src="https://i.pravatar.cc/150?u=jessica" alt="Jessica" className="w-8 h-8 rounded-full border border-[#1a1f2e]" />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#0b0f19] rounded-full"></span>
-                </div>
-                <p className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">Jessica_Code</p>
-              </div>
-              <span className="text-xs text-slate-500 font-medium">In Match</span>
-            </div>
           </div>
         </div>
 

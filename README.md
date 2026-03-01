@@ -1,9 +1,9 @@
 <div align="center">
 
-# ⚡ CodeArena
+# CodeArena
 
 **Competitive Programming Arena**
-
+           
 <br>
 
 *Where Code Meets Competition*
@@ -24,7 +24,7 @@ Built for **DevHacks 2026**.
 
 <br>
 
-[Features](#-features) · [Architecture](#%EF%B8%8F-system-architecture) · [Sandbox](#-docker-sandbox-secure-code-execution) · [AI Integration](#-gemini-ai-integration) · [API Reference](#-api-reference) · [Tech Stack](#%EF%B8%8F-tech-stack) · [Getting Started](#-getting-started)
+[Features](#features) · [Architecture](#system-architecture) · [Sandbox](#docker-sandbox-secure-code-execution) · [AI Integration](#gemini-ai-integration) · [API Reference](#api-reference) · [Tech Stack](#tech-stack) · [Getting Started](#getting-started)
 
 </div>
 
@@ -32,24 +32,24 @@ Built for **DevHacks 2026**.
 
 ---
 
-## 🚀 Features
+## Features
 
-| | Feature | Description |
-|---|---------|-------------|
-| 🏋️ | **Practice Arena** | Solve coding problems with real-time judging across C++, Java, and Python |
-| ⚔️ | **1v1 Blitz Battles** | Real-time head-to-head coding duels via WebSocket with live opponent tracking |
-| 🏆 | **Contest System** | Create & join timed contests with live leaderboards and score tracking |
-| 🤖 | **AI Hints** | Progressive 3-level hint system powered by Gemini 2.5 Flash |
-| 🛡️ | **Auto Plagiarism Detection** | Every submission analyzed for AI-generation and copy-paste before execution |
-| 💼 | **Mock Interviews** | FAANG-style AI interview evaluation with hire/no-hire recommendations |
-| 🎮 | **Game Modes** | Blitz battles, Ctrl+Fix It (debug challenges), and competitive contests |
-| 👥 | **Community Forum** | Discussion posts with tags and engagement |
-| 🪙 | **Gamification** | Coins, XP, streaks, and profile stats |
-| 🔐 | **Dual Auth** | JWT + OAuth 2.0 (GitHub & Google) with email OTP verification |
+| Feature | Description |
+|---------|-------------|
+| **Practice Arena** | Solve coding problems with real-time judging across C++, Java, and Python |
+| **1v1 Blitz Battles** | Real-time head-to-head coding duels via WebSocket with live opponent tracking |
+| **Contest System** | Create & join timed contests with live leaderboards and score tracking |
+| **AI Hints** | Progressive 3-level hint system powered by Gemini 2.5 Flash |
+| **Auto Plagiarism Detection** | Every submission analyzed for AI-generation and copy-paste before execution |
+| **Mock Interviews** | FAANG-style AI interview evaluation with hire/no-hire recommendations |
+| **Game Modes** | Blitz battles, Ctrl+Fix It (debug challenges), and competitive contests |
+| **Community Forum** | Discussion posts with tags and engagement |
+| **Gamification** | Coins, XP, streaks, and profile stats |
+| **Dual Auth** | JWT + OAuth 2.0 (GitHub & Google) with email OTP verification |
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -90,16 +90,19 @@ Built for **DevHacks 2026**.
                           │
                           ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│              🐳 DOCKER SANDBOX (Isolated Execution Engine)             │
+│                 DOCKER SANDBOX (Isolated Execution Engine)             │
 │                                                                        │
 │  Ubuntu 22.04 | GCC/G++ | Python 3 | JDK 17 | Node.js                │
 │  cgroups v2 · seccomp · per-user isolation · ulimits                  │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
+> [!NOTE]
+> When running via Docker Compose the backend runs inside its own container (Docker-in-Docker). It auto-detects this environment (`/.dockerenv`) and adjusts Docker flags accordingly — `--cgroupns host` and seccomp profiles are only applied on bare-metal Linux where they are supported.
+
 ---
 
-## 🐳 Docker Sandbox: Secure Code Execution
+## Docker Sandbox: Secure Code Execution
 
 > [!IMPORTANT]
 > Executing untrusted user code on a server is extremely dangerous — users could wipe the filesystem, fork-bomb the server, open network connections, or consume infinite resources.
@@ -170,7 +173,7 @@ The seccomp profile uses a **default-KILL policy** — any system call not expli
 
 ---
 
-## ⚖️ Online Judge Engine
+## Online Judge Engine
 
 ### Judging Pipeline
 
@@ -228,7 +231,7 @@ Submit Code → Job Queue (Async) → Plagiarism Check (Gemini AI)
 
 ---
 
-## 🤖 Gemini AI Integration
+## Gemini AI Integration
 
 CodeStorm integrates **Google Gemini 2.5 Flash** across three distinct services:
 
@@ -283,7 +286,7 @@ Also supports generating interview-style questions from any problem.
 
 ---
 
-## ⚔️ 1v1 Blitz Battle System
+## 1v1 Blitz Battle System
 
 Real-time competitive coding duels powered by WebSocket.
 
@@ -321,7 +324,7 @@ Real-time competitive coding duels powered by WebSocket.
 
 ---
 
-## 🏆 Contest System
+## Contest System
 
 Full competitive programming contest platform:
 
@@ -344,7 +347,7 @@ Contest ──┬── ContestProblem (many) ──── Problem
 
 ---
 
-## 🔐 Authentication & Security
+## Authentication & Security
 
 | Feature | Details |
 |---------|---------|
@@ -364,7 +367,7 @@ User → Login → Spring Security AuthManager → BCrypt validation
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 <details>
 <summary><b>Entity Relationship Overview</b></summary>
@@ -409,7 +412,7 @@ Problems ─────┬──── Topics (many-to-many)
 
 ---
 
-## 📡 API Reference
+## API Reference
 
 <details>
 <summary><b>Auth & Users</b></summary>
@@ -490,7 +493,7 @@ Problems ─────┬──── Topics (many-to-many)
 
 ---
 
-## 🖥️ Frontend
+## Frontend
 
 ### Pages (14 total)
 
@@ -517,7 +520,7 @@ Problems ─────┬──── Topics (many-to-many)
 
 ---
 
-## ⚡ Performance & Scalability
+## Performance & Scalability
 
 | Aspect | Implementation |
 |--------|---------------|
@@ -532,7 +535,7 @@ Problems ─────┬──── Topics (many-to-many)
 
 ---
 
-## 🛡️ Tech Stack
+## Tech Stack
 
 ### Backend
 
@@ -565,67 +568,144 @@ Problems ─────┬──── Topics (many-to-many)
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
-### Prerequisites
+### Quick Start with Docker Compose (recommended)
 
-> [!NOTE]
-> Make sure you have the following installed before proceeding.
+> One command spins up **MySQL + Sandbox + Backend + Frontend** — zero local toolchain required.
 
-- **Java 17+**
-- **Node.js 18+**
-- **MySQL 8.0**
-- **Docker Desktop**
-
-### Backend Setup
 ```bash
-cd backend
-
-# Build the Docker sandbox image
-cd sandbox && ./build-sandbox.ps1 && cd ..
-
-# Configure database
-# Edit src/main/resources/application.properties with your MySQL credentials
-
-# Run
-./mvnw spring-boot:run
+git clone <your-repo-url>
+cd Devhacks
+cp .env.example .env        # edit .env with your values
+docker compose up --build
 ```
 
-### Frontend Setup
+Open `http://localhost:5173` — done.
+
+| Service | Container | Port | Notes |
+|---------|-----------|------|-------|
+| MySQL 8.0 | `devhacks-db-1` | `3307` (host) → `3306` | Uses `3307` by default to avoid conflicts with a local MySQL |
+| Sandbox | `devhacks-sandbox-persistent` | *(none)* | Isolated execution engine (`network_mode: none`) |
+| Backend | `devhacks-backend-1` | `8080` | Spring Boot + Docker CLI for sandbox management |
+| Frontend | `devhacks-frontend-1` | `5173` → Nginx `80` | Pre-built React SPA |
+
+> [!NOTE]
+> The backend container mounts the host Docker socket (`/var/run/docker.sock`) so it can `docker exec` into the sandbox. It automatically discovers the compose-managed `devhacks-sandbox-persistent` container on startup.
+
+### Manual Setup (without Docker Compose)
+
+<details>
+<summary>Click to expand</summary>
+
+#### 1) Prerequisites
+
+- Java 17+, Maven 3.9+
+- Node.js 18+
+- MySQL 8.0+
+- Docker Desktop (or Docker Engine)
+
+#### 2) Clone
+
+```bash
+git clone <your-repo-url>
+cd Devhacks
+cp .env.example .env   # fill in your values
+```
+
+#### 3) Build the sandbox image
+
+```powershell
+cd backend/sandbox
+./build-sandbox.ps1    # or: docker build -t devhacks-sandbox .
+cd ../..
+```
+
+#### 4) Start the backend
+
+```powershell
+cd backend
+
+# Load env vars (PowerShell)
+$env:DB_PASSWORD="your-db-password"
+$env:JWT_SECRET="your-strong-jwt-secret"
+
+mvn spring-boot:run
+```
+
+#### 5) Start the frontend
+
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Create .env file
 echo "VITE_BASE_URL=http://localhost:8080/api" > .env
-
-# Run
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173` and the backend at `http://localhost:8080`.
+#### 6) Open
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8080`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+</details>
 
 ---
 
-## 📈 Future Roadmap
+## Environment Variables
+
+All configuration lives in a single `.env` file (see `.env.example`).
+
+### Required
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DB_USERNAME` | MySQL username | `root` |
+| `DB_PASSWORD` | MySQL password | `s3cret` |
+| `JWT_SECRET` | JWT signing key (min 32 chars) | `a-long-random-string...` |
+
+### Feature Toggles
+
+| Variable | Default | What it controls |
+|----------|---------|------------------|
+| `SPRING_PROFILES_ACTIVE` | *(empty)* | Set to `oauth` to enable Google OAuth2 login (requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`). Leave empty to disable. |
+| `GOOGLE_CLIENT_ID` | *(empty)* | Google OAuth2 Client ID (from Google Cloud Console). Only needed when `SPRING_PROFILES_ACTIVE=oauth`. |
+| `GOOGLE_CLIENT_SECRET` | *(empty)* | Google OAuth2 Client Secret. Only needed when `SPRING_PROFILES_ACTIVE=oauth`. |
+| `GEMINI_API_KEY` | *(empty)* | Google Gemini API key. Enables AI hints, plagiarism detection, and mock interviews. Without it these features gracefully degrade (hints return a fallback, plagiarism defaults to "SUSPICIOUS"). |
+| `MAIL_ENABLED` | `false` | Email OTP verification via Gmail SMTP. Set to `true` and provide Gmail credentials below. |
+| `MAIL_USERNAME` | *(empty)* | Gmail address for SMTP. Only needed when `MAIL_ENABLED=true`. |
+| `MAIL_PASSWORD` | *(empty)* | Gmail App Password. Only needed when `MAIL_ENABLED=true`. |
+
+### Optional Overrides
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_URL` | `jdbc:mysql://localhost:3306/codestorm...` | Full JDBC connection string. Docker Compose sets this automatically. |
+| `DB_PORT` | `3307` | Host port mapped to MySQL in Docker Compose. Change if `3307` is taken. |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated origins the backend allows. |
+| `OAUTH_SUCCESS_REDIRECT` | `http://localhost:5173/oauth2/callback` | Where to redirect after OAuth2 login. |
+| `COOKIE_SECURE` | `false` | Set to `true` in production (HTTPS-only cookies). |
+| `VITE_BASE_URL` | `http://localhost:8080/api` | API base URL baked into the frontend at build time. |
+
+---
+
+## Future Roadmap
 
 | Feature | Description |
 |---------|-------------|
-| 🔍 **AI Code Reviews** | Gemini-powered line-by-line code review feedback |
-| 👥 **Team Battles** | 2v2 and 3v3 team competitive modes |
-| 📺 **Live Spectating** | Watch ongoing battles in real-time |
-| ✨ **Problem Creation Studio** | AI-assisted problem statement & test case generation |
-| 📱 **Mobile App** | React Native companion app |
-| 📊 **Analytics Dashboard** | ML-powered skill gap analysis & personalized practice |
+| **AI Code Reviews** | Gemini-powered line-by-line code review feedback |
+| **Team Battles** | 2v2 and 3v3 team competitive modes |
+| **Live Spectating** | Watch ongoing battles in real-time |
+| **Problem Creation Studio** | AI-assisted problem statement & test case generation |
+| **Mobile App** | React Native companion app |
+| **Analytics Dashboard** | ML-powered skill gap analysis & personalized practice |
 
 ---
 
 <div align="center">
 <br>
 
-*Built with ❤️ for DevHacks 2026*
+*Built for DevHacks 2026*
 
 <br>
 </div>
