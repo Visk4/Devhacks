@@ -24,11 +24,38 @@ Built for **DevHacks 2026**.
 
 <br>
 
-[Features](#features) · [Architecture](#system-architecture) · [Sandbox](#docker-sandbox-secure-code-execution) · [AI Integration](#gemini-ai-integration) · [API Reference](#api-reference) · [Tech Stack](#tech-stack) · [Getting Started](#getting-started)
+[Getting Started](#getting-started) · [Features](#features) · [Architecture](#system-architecture) · [Sandbox](#docker-sandbox-secure-code-execution) · [AI Integration](#gemini-ai-integration) · [API Reference](#api-reference) · [Tech Stack](#tech-stack)
 
 </div>
 
 <br>
+
+---
+
+## Getting Started
+
+### Quick Start (Docker Compose)
+
+```bash
+git clone <your-repo-url>
+cd Devhacks
+cp .env.example .env
+docker compose up --build
+```
+
+Open `http://localhost:5173`.
+
+### Required `.env` values
+
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `JWT_SECRET` (minimum 32 characters)
+
+### Default service ports
+
+- Frontend: `5173`
+- Backend API: `8080`
+- MySQL: `3307` (host) -> `3306` (container)
 
 ---
 
@@ -565,90 +592,6 @@ Problems ─────┬──── Topics (many-to-many)
 | WebSocket | STOMP.js + SockJS | 7.3 |
 | HTTP | Axios | 1.13 |
 | Routing | React Router | 7.13 |
-
----
-
-## Getting Started
-
-### Quick Start with Docker Compose (recommended)
-
-> One command spins up **MySQL + Sandbox + Backend + Frontend** — zero local toolchain required.
-
-```bash
-git clone <your-repo-url>
-cd Devhacks
-cp .env.example .env        # edit .env with your values
-docker compose up --build
-```
-
-Open `http://localhost:5173` — done.
-
-| Service | Container | Port | Notes |
-|---------|-----------|------|-------|
-| MySQL 8.0 | `devhacks-db-1` | `3307` (host) → `3306` | Uses `3307` by default to avoid conflicts with a local MySQL |
-| Sandbox | `devhacks-sandbox-persistent` | *(none)* | Isolated execution engine (`network_mode: none`) |
-| Backend | `devhacks-backend-1` | `8080` | Spring Boot + Docker CLI for sandbox management |
-| Frontend | `devhacks-frontend-1` | `5173` → Nginx `80` | Pre-built React SPA |
-
-> [!NOTE]
-> The backend container mounts the host Docker socket (`/var/run/docker.sock`) so it can `docker exec` into the sandbox. It automatically discovers the compose-managed `devhacks-sandbox-persistent` container on startup.
-
-### Manual Setup (without Docker Compose)
-
-<details>
-<summary>Click to expand</summary>
-
-#### 1) Prerequisites
-
-- Java 17+, Maven 3.9+
-- Node.js 18+
-- MySQL 8.0+
-- Docker Desktop (or Docker Engine)
-
-#### 2) Clone
-
-```bash
-git clone <your-repo-url>
-cd Devhacks
-cp .env.example .env   # fill in your values
-```
-
-#### 3) Build the sandbox image
-
-```powershell
-cd backend/sandbox
-./build-sandbox.ps1    # or: docker build -t devhacks-sandbox .
-cd ../..
-```
-
-#### 4) Start the backend
-
-```powershell
-cd backend
-
-# Load env vars (PowerShell)
-$env:DB_PASSWORD="your-db-password"
-$env:JWT_SECRET="your-strong-jwt-secret"
-
-mvn spring-boot:run
-```
-
-#### 5) Start the frontend
-
-```bash
-cd frontend
-npm install
-echo "VITE_BASE_URL=http://localhost:8080/api" > .env
-npm run dev
-```
-
-#### 6) Open
-
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8080`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-
-</details>
 
 ---
 
