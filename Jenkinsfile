@@ -16,7 +16,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/Sumit-Rathod-06/Devhacks.git'
+                    url: 'https://github.com/Visk4/Devhacks.git'
             }
         }
 
