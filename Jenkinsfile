@@ -17,7 +17,7 @@ pipeline {
             steps {
                 git branch: 'main',
                     url: 'https://github.com/Visk4/Devhacks.git'
-            }
+           }
         }
 
         stage('Build') {
@@ -50,7 +50,7 @@ pipeline {
                             ./mvnw sonar:sonar \
                               -Dsonar.projectKey=devhacks \
                               -Dsonar.projectName=DevHacks \
-                              -Dsonar.host.url=http://localhost:9000 \
+                              -Dsonar.host.url=http://172.17.0.1:9000 \
                               -Dsonar.token=${SONAR_TOKEN}
                         """
                     }
